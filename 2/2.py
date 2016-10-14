@@ -88,10 +88,6 @@ V_passive = np.zeros(bins)
 
 for t in range(1, bins):
     V_passive[t] = V_passive[t-1] + delta_t * (I[t] - V_passive[t-1] / R_mem) / C_mem
-    if not np.isnan(V_passive[t-1]) and np.isnan(V_passive[t]):
-        print(I[t])
-        print(V_passive[t-1] / R_mem)
-        print((I[t] - V_passive[t-1] / R_mem) / C_mem)
 
 in_spikes = c1 + c2 + c3
 I_spiking = np.zeros(bins)
@@ -109,11 +105,12 @@ for t in range(1, bins):
     if V_lif[t-1] == v_max:
         V_lif[t] = 0
 
-        I_spiking[t:t + refractory_bins + 1] = np.zeros(refractory_bins)
-        in_spikes[t:t + refractory_bins + 1] = np.zeros(refractory_bins)
+        I_spiking[t:] = np.zeros(len(I_spiking[t:]))
+        in_spikes[t:t + refractory_bins] = np.zeros(refractory_bins)
     else:
-        if in_spikes >= 1:
-            I_spiking[t:t+len(decay_kernel)+1] = I_spiking[t:t+len(decay_kernel)+1]+ decay_kernel
+        if in_spikes[t] >= 1:
+            prev = I_spiking[t:t+len(decay_kernel)]
+            I_spiking[t:t+len(decay_kernel)] = prev + decay_kernel[:len(prev)]
             
         V_lif[t] = V_lif[t-1] + delta_t * (I_spiking[t] - V_lif[t-1] / R_mem) / C_mem
 

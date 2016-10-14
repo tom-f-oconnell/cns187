@@ -72,12 +72,19 @@ for t in range(0, kernel_bins):
 
 # need to normalize the decay kernel to not have the convolution amplify anything
 
+"""
 I_1 = np.convolve(c1, decay_kernel, mode='same')
 I_2 = np.convolve(c2, decay_kernel, mode='same')
 I_3 = np.convolve(c3, decay_kernel, mode='same')
 
 # TODO prevent coincidence first?
 I = I_1 + I_2 + I_3
+"""
+
+# problem with this approach is the R and C don't actually define the time constant
+# (it seems) since they want us to adjust those separately
+# TODO need current to reset though
+I = (c1 + c2 + c3) * I_0
 
 V_passive = np.zeros(bins)
 
@@ -89,8 +96,8 @@ for t in range(1, bins):
         print((I[t] - V_passive[t-1] / R_mem) / C_mem)
 
 V_lif = np.zeros(bins)
-v_max = 10
-v_thresh = 1
+v_max = 1
+v_thresh = 0.6
 
 # TODO refractoriness
 for t in range(1, bins):

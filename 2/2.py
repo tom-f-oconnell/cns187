@@ -82,7 +82,7 @@ I = I_1 + I_2 + I_3
 V_passive = np.zeros(bins)
 
 for t in range(1, bins):
-    V_passive[t] = V_passive[t-1] + (I[t] - V_passive[t-1] / R_mem) / C_mem
+    V_passive[t] = V_passive[t-1] + delta_t * (I[t] - V_passive[t-1] / R_mem) / C_mem
     if not np.isnan(V_passive[t-1]) and np.isnan(V_passive[t]):
         print(I[t])
         print(V_passive[t-1] / R_mem)
@@ -99,7 +99,7 @@ for t in range(1, bins):
     if V_lif[t-1] == v_max:
         V_lif[t] = 0
     else:
-        V_lif[t] = V_lif[t-1] + (I[t] - V_lif[t-1] / R_mem) / C_mem
+        V_lif[t] = V_lif[t-1] + delta_t * (I[t] - V_lif[t-1] / R_mem) / C_mem
 
         # spike if we reached threshold
         if V_lif[t] >= v_thresh:

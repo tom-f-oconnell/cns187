@@ -1,0 +1,116 @@
+% Template by Jennifer Pan, August 2011
+
+\documentclass[10pt,letter]{article}
+	% basic article document class
+	% use percent signs to make comments to yourself -- they will not show up.
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+	% packages that allow mathematical formatting
+
+\usepackage{graphicx}
+	% package that allows you to include graphics
+
+\usepackage{setspace}
+	% package that allows you to change spacing
+
+\onehalfspacing
+	% text become 1.5 spaced
+
+\usepackage{fullpage}
+	% package that specifies normal margins
+	
+
+\begin{document}
+	% line of code telling latex that your document is beginning
+
+
+\title{Problem Set 3}
+
+\author{Tom O'Connell}
+
+\date{August 20, 2016}
+	% Note: when you omit this command, the current dateis automatically included
+ 
+\maketitle 
+	% tells latex to follow your header (e.g., title, author) commands.
+
+
+\section*{1 Diffuse-to-Bounds Decision Making}
+
+For each class that you are looking for in the world, you have a model $p_c(x_1,...,x_t | \theta_c)$ 
+such that you can assign probabilities to sequences of observations, given the specific parameters 
+($\theta$) of that model for class $c$.
+
+
+
+
+\section*{2 One-Neuron Decisions}
+
+\paragraph{1)} Compute the false reject error rate when the lower decision threshold is
+
+\subparagraph{a)} $-1$
+
+\subparagraph{b)} $-1.2$
+
+\subparagraph{c)} $-1.8$
+
+\paragraph{2)} Compute how long it takes to decide GREEN with k action potentials when the decision
+thresholds are
+
+\subparagraph{a)} $\pm 1.2$\\
+
+While there are no action potentials, an observer of the neuron would drift closer to the lower 
+decision threshold at a rate of $(\ell_0 - \ell_1)\log_{10}(e) = (1 $Hz$ - 10 $Hz$)  0.434 = -3.906$
+units per second. With a GREEN threshold at $-1.2$ units, it will only take $0.308$ seconds to 
+decide GREEN without any action potentials.\\
+
+Now with $k$ action potentials, each bringing us $\log_{10}(\frac{\ell_1}{\ell_0}) = \log_{10}(
+\frac{10 \text{Hz}}{1 \text{Hz}}) = 1 $ units away from the lower decision threshold, 
+it will take $0.308 + 0.256 k$ seconds 
+for an observer of the cell to decide the (beyond the set threshold) that there is a GREEN light.\\
+
+\subparagraph{b)} $\pm 1.8$\\
+
+With the lower threshold of $-1.8$, it will take $\frac{1.8}{3.9} - \frac{k}{3.9} = 
+0.462 + 0.256 k$ seconds 
+for an observer of the cell to decide (beyond threshold) that there is a GREEN light.\\
+
+\paragraph{3)} Compute how long it takes to decide RED (both upper and lower bounds) with decision
+thresholds at $\pm 1.8$ using
+
+\subparagraph{a)} 
+
+\subparagraph{b)} 
+
+\paragraph{4)} Use the SPRT code on Moodle to simulate the neuron’s decision. Confirm your calculated
+decision times from 2.3.a and 2.3.b. Provide the generated figures in your
+response.
+
+\section*{3 Two-Neuron Decisions}
+
+\paragraph{1)} Two identically tuned neurons, uncorrelated, tuned as above.
+
+\subparagraph{2.2.a)} 
+
+\subparagraph{2.2.b)} 
+
+\subparagraph{2.3.a)} 
+
+\subparagraph{2.3.b)} 
+
+\paragraph{2)} One neuron tuned as above, and one tuned similarly for green rather than 
+    red. Uncorrelated.
+
+\subparagraph{2.2.a)} 
+
+\subparagraph{2.2.b)} 
+
+\subparagraph{2.3.a)} 
+
+\subparagraph{2.3.b)} 
+
+
+
+\end{document}
+	% line of code telling latex that your document is ending. If you leave this out, you'll get an error

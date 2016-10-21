@@ -40,10 +40,47 @@
 
 For each class that you are looking for in the world, you have a model $p_c(x_1,...,x_t | \theta_c)$ 
 such that you can assign probabilities to sequences of observations, given the specific parameters 
-($\theta$) of that model for class $c$.
+($\theta$) of that model for class $c$.  Consider the case where there are two competing 
+models with parameters $\theta_0$ and $\theta_1$.  Assuming independent measurements, we have 
+to decide which of the following two forms is generating the measurements:\\
 
+\[ p_0(x_1,...,x_t | \theta_0) = p(\theta_0)p(x_1 | \theta_0)...p(x_t | \theta_0)  \]
+\[ p_1(x_1,...,x_t | \theta_1) = p(\theta_1)p(x_1 | \theta_1)...p(x_t | \theta_1)  \]
 
+One approach to this decision would be be thresholding the likelihood ratio, in line with the 
+Neyman-Pearson theorem. 
 
+\[ \text{LR} = \frac{p_1(\theta_1 | x_1,...,x_t)}{p_0(\theta_0 | x_1,...,x_t)} \]
+
+By Baye's rule, because the marginals cancel:
+
+\[ \text{LR} = \frac{p(\theta_1)p_1(x_1,...,x_t | \theta_1)}
+{p(\theta_0)p_0(x_1,...,x_t | \theta_0)} \]
+
+However, we also want to be able to make this decision as soon as possible, again given the 
+probabilities we will allow for false positives and false negatives 
+($\alpha$ and $\beta$, respectively).  So we will check the cumulative likelihood ratio, $r$,
+at each measurement, and stop taking measurements when we have enough information to decide 
+beyond our preset thresholds.
+
+\[ r = \frac{p(\theta_1)}{p(\theta_0)}\prod_{i=1}^{t}\frac{p(x_i | \theta_1)}{p(x_i | \theta_0)}\]
+
+Now we just need to pick thresholds on this ratio.  For predetermined values of $\alpha$ and 
+$\beta$, Wald proved that $T_1 \leq \frac{1 - \beta}{\alpha}$ and $T_2 \geq \frac{\beta}
+{1 - \alpha}$ are tight bounds on the upper and lower thresholds we should use. Combined with 
+our decision rule:
+
+\[ \begin{cases}
+   \text{Decide class 1} & r \geq T_1 \\
+   \text{Decide class 0} & r \leq T_2 \\
+   \text{Otherwise, continue}
+   \end{cases}
+\]
+
+We now have a completely specified decision rule.  To update the likelihood ratio more easily, 
+we will store the $\log$ likelihood ratio instead, and use the logs of our thresholds as well.  
+Now each update is a sum instead of a product, and instead of $T_1$ and $T_2$, we will use their
+logs.
 
 \section*{2 One-Neuron Decisions}
 

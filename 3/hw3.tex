@@ -80,17 +80,27 @@ our decision rule:
 We now have a completely specified decision rule.  To update the likelihood ratio more easily, 
 we will store the $\log$ likelihood ratio instead, and use the logs of our thresholds as well.  
 Now each update is a sum instead of a product, and instead of $T_1$ and $T_2$, we will use their
-logs.
+logs.\\
+
+A pair of neurons could implement this two threshold decision rule. Each would have to receive input 
+from at least one neuron whose firing rate varies depending on which ground truth class is out in 
+the world.  One would receive excitatory input from the tuned neuron, and it will integrate spikes 
+it receives, firing (deciding on its class) if it receives enough input in a short period of time.  
+Another neuron would receive inhibitory input from the tuned neuron, but otherwise drift closer to firing on its own.  If it receives a low enough level of inhibition and fires, it is deciding for its 
+own class.
 
 \section*{2 One-Neuron Decisions}
 
 \paragraph{1)} Compute the false reject error rate when the lower decision threshold is
 
-\subparagraph{a)} $-1$
+Need more information to compute these, such as $\alpha$, its complement,  or the upper decision
+threshold. \\
 
-\subparagraph{b)} $-1.2$
+The lower threshold is:
 
-\subparagraph{c)} $-1.8$
+\[ B \leq \log(p(x=-1 | y=1) - \log(p(x=-1 | y = -1)) \]
+
+This first quantity is the false negative rate (reject rate) and the second is unclear from this information.
 
 \paragraph{2)} Compute how long it takes to decide GREEN with k action potentials when the decision
 thresholds are
@@ -116,38 +126,71 @@ for an observer of the cell to decide (beyond threshold) that there is a GREEN l
 \paragraph{3)} Compute how long it takes to decide RED (both upper and lower bounds) with decision
 thresholds at $\pm 1.8$ using
 
-\subparagraph{a)} 
+%
+%For the bounds, I will assume the tuned neuron is firing at a mean of 1 or 10 Hz, but obeying Poisson
+ %statistics for spike generation. Given that there is RED and the mean firing rate should be 10 Hz:\\
 
-\subparagraph{b)} 
+%Some bounds, provided by the higher and lower number of spikes fulfilling the below relation:
+% \[ p(\text{number of spikes in first second}) \approx 0.05 \]
+
+%Lower bound, which will have more spikes, has 14 spikes in the first second. 
+\subparagraph{a)} Assuming 2 action potentials happened, the lower bound for decision time is 
+$\epsilon$ seconds, because the each spike will increment the cumulative log likelihood ratio by 
+one log unit, since the firing rates differ by a factor of 10 depending on the true state of the world.\\
+
+An upper bound is that no decision is ever reached in finite time. As long as the spikes happen far 
+enough apart that the drift subtracts enough from the log likelihood ratio so that each of the three 
+spikes fails to reach the upper decision threshold, then there is finite probability (in finite time) that the Poisson spiking statistics will never let the neuron fire enough to reach threshold.
+
+\subparagraph{b)} Same as above. If they coincide, the decision could be reached almost immediately.\\
+
+If you are really unlucky, it could take arbitrarily long to reach the decision.
 
 \paragraph{4)} Use the SPRT code on Moodle to simulate the neuron’s decision. Confirm your calculated
 decision times from 2.3.a and 2.3.b. Provide the generated figures in your
-response.
+response.\\
+
+If we ran the simulation enough times, you would start to see more of a tail to the distribution of 
+response times, but you can already see some high latency decisions in the $C = 1$ case.\\
+
+It is also apparent from the response time distributions that some times the spikes will coincide 
+enough early on to get a very fast response time.  In reality, you would be limited by the rarity 
+of such rapid spiking, and by the refractory period of the neuron.\\
+
+See graphs attached at the bottom.
 
 \section*{3 Two-Neuron Decisions}
 
-\paragraph{1)} Two identically tuned neurons, uncorrelated, tuned as above.
+\paragraph{1)} Two identically tuned neurons, uncorrelated, tuned as above.\\
 
-\subparagraph{2.2.a)} 
+With two uncorrelated neurons, the drifts would just happen twice as fast because the thresholds
+ would be the same, but you sum the log likelihood ratios from each on each time step.  Individual
+ spikes still only contribute the same amount.
 
-\subparagraph{2.2.b)} 
+\subparagraph{2.2.a)} $0.616 + 0.256 k$ seconds 
 
-\subparagraph{2.3.a)} 
+\subparagraph{2.2.b)} $0.914 + 0.256 k$ seconds 
 
-\subparagraph{2.3.b)} 
+\subparagraph{2.3)} The answer for 2.3 does not change. It is now more unlikely that you will have 
+rare events prevent you from reaching the RED decision, but it could still happen for less than 
+infinite time.  Additionally since the thresholds are the same and each action potential contributes 
+equally still, very fast decisions can also be reached.
 
 \paragraph{2)} One neuron tuned as above, and one tuned similarly for green rather than 
-    red. Uncorrelated.
+    red. Uncorrelated. \\
 
-\subparagraph{2.2.a)} 
+Now the drifts will cancel out since the neurons are tuned in opposite directions, assuming both 
+cells are silent.  and it will only 
+be spiking from one or both of the neurons that can bring the system closer to threshold.
 
-\subparagraph{2.2.b)} 
+\subparagraph{2.2.a)} For $k > 1$, on the part of the GREEN tuned cell, it is possible to reach the 
+decision threshold for GREEN very quickly, depending on the relative timing of the spikes.
 
-\subparagraph{2.3.a)} 
+\subparagraph{2.2.b)} Same as above.
 
-\subparagraph{2.3.b)} 
-
-
+\subparagraph{2.3)} Same, again. This case will generally reach RED decisions with an expected time 
+slightly longer than above, but will be able to reach GREEN decisions sooner, because it does not 
+have to rely wholly on drift.
 
 \end{document}
 	% line of code telling latex that your document is ending. If you leave this out, you'll get an error

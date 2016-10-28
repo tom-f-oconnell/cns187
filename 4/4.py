@@ -228,10 +228,10 @@ plt.show()
 # 1.3.c: manually implement the LTU -> AND -> OR classifier for this data
 
 # TODO pass weights?
-def manual_AND_OR_est(X):
+def manual_AND_OR_est(X, nonlin=np.sign):
     # add the column of ones for the bias weights
     X = np.concatenate((np.ones((1, X.shape[1])), X), axis=0)
-    ltu = np.sign(np.dot(W_0.transpose(), X))
+    ltu = nonlin(np.dot(W_0.transpose(), X))
     if verbose:
         print(ltu)
 
@@ -256,8 +256,8 @@ def manual_AND_OR_est(X):
         print(np.dot(Left_AND, g_left))
         print(np.dot(Right_AND, g_right))
 
-    Left_out = np.sign(np.dot(Left_AND, g_left))
-    Right_out = np.sign(np.dot(Right_AND, g_right))
+    Left_out = nonlin(np.dot(Left_AND, g_left))
+    Right_out = nonlin(np.dot(Right_AND, g_right))
 
     if verbose:
         print(Left_out)
@@ -276,7 +276,7 @@ def manual_AND_OR_est(X):
         print(np.dot(OR, g_and))
 
     # switch back to the sign convention of the loaded dataset
-    tmp = np.sign(np.dot(OR, g_and))
+    tmp = nonlin(np.dot(OR, g_and))
     tmp[tmp == -1] = 0
     return tmp
 
@@ -303,9 +303,22 @@ print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts))
 Problem 2
 """
 
+def logistic_regression(X):
+    # add the column of ones for the bias weights
+    X = np.concatenate((np.ones((1, X.shape[1])), X), axis=0)
+
+    # initial parameter guesses
+    W
+    
+    # fit the parameters using gradient descent
+    while True:
+        
+    
+
 # 2.3
 
 B = scipy.io.loadmat('datasetB.mat')
+# TODO this may be transposed
 Xtr = B['Xtr']
 ytr = B['ytr']
 Xts = B['Xts']
@@ -313,13 +326,16 @@ yts = B['yts']
 
 
 
+
 # TODO plot decision boundary of model
 
 
+'''
 C = scipy.io.loadmat('datasetC.mat')
 Xtr = C['Xtr']
 ytr = C['ytr']
 Xts = C['Xts']
 yts = C['yts']
+'''
 
 # TODO remap features in non linearly separable C

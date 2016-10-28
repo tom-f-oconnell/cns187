@@ -275,13 +275,51 @@ def manual_AND_OR_est(X):
     if verbose:
         print(np.dot(OR, g_and))
 
-    return np.sign(np.dot(OR, g_and))
+    # switch back to the sign convention of the loaded dataset
+    tmp = np.sign(np.dot(OR, g_and))
+    tmp[tmp == -1] = 0
+    return tmp
 
 # both bad: 0, 0
 # left good: -1, 0
 # right good: 1, 0
-test_est = manual_AND_OR_est(np.array([[0, 0],[-1, 0],[1, 0]]).transpose())
+#test_est = manual_AND_OR_est(np.array([[0, 0],[-1, 0],[1, 0]]).transpose())
 
-#ytr_est = manual_AND_OR_est(Xtr)
+ytr_est = manual_AND_OR_est(Xtr)
+yts_est = manual_AND_OR_est(Xts)
 
-# TODO report train / test accuracy
+# TODO remove me
+Xtr_c0_est = Xtr[:, (ytr_est == 0).flatten()]
+Xtr_c1_est = Xtr[:, (ytr_est == 1).flatten()]
+plt.scatter(Xtr_c0[0,:], Xtr_c0[1,:], c='r')
+plt.scatter(Xtr_c1[0,:], Xtr_c1[1,:],  c='b')
+
+# TODO visualize where the errors are?
+print('Training set accuracy: ' + str(np.sum(ytr_est == ytr.transpose()) / len(ytr)))
+print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts)))
+
+
+"""
+Problem 2
+"""
+
+# 2.3
+
+B = scipy.io.loadmat('datasetB.mat')
+Xtr = B['Xtr']
+ytr = B['ytr']
+Xts = B['Xts']
+yts = B['yts']
+
+
+
+# TODO plot decision boundary of model
+
+
+C = scipy.io.loadmat('datasetC.mat')
+Xtr = C['Xtr']
+ytr = C['ytr']
+Xts = C['Xts']
+yts = C['yts']
+
+# TODO remap features in non linearly separable C

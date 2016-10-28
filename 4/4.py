@@ -303,16 +303,31 @@ print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts))
 Problem 2
 """
 
-def logistic_regression(X):
+def logistic_regression(X, y):
     # add the column of ones for the bias weights
     X = np.concatenate((np.ones((1, X.shape[1])), X), axis=0)
 
     # initial parameter guesses
-    W
+    # only free parameters are the bias and input component weights
+    W = np.zeros((X.shape[0] + 1, 1))
+    N = X.shape[1]
+    # schedule?
+    rate = 0.001
     
     # fit the parameters using gradient descent
     while True:
-        
+        # "cross-entropy" error term
+        print(W.shape)
+        # TODO make sure right sign convention with y
+        # may need to loop to eval sum if dot products dont make sense in this order
+        last_error = error
+        error = (1/N) * np.sum(np.ln(1 + np.exp(np.dot(-y, np.dot(W.transpose(), X)))))
+        error_grad = error - last_error
+
+        # TODO 
+        #update = error_grad * TODO / np.norm(error_grad *
+
+
     
 
 # 2.3

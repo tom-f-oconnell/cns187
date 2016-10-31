@@ -7,8 +7,8 @@ import scipy.io
 
 sns.set()
 
-should_plot = True
-save_figs = False
+should_plot = False
+save_figs = True
 verbose = False
 
 figpath = './figures/'
@@ -17,7 +17,7 @@ plt.close('all')
 
 def show_or_save(name):
     if save_figs:
-        plt.savefig(figpath + name)
+        plt.savefig(figpath + name + '.eps', format='eps', dpi=1000)
         
     if should_plot:
         plt.show()
@@ -64,7 +64,7 @@ mine, = plt.plot([-0.2, 1], [1, -0.2], 'r-', label='Hand picked')
 plt.xlim(-0.2, 1.2)
 plt.ylim(-0.2, 1.2)
 
-show_or_save('fig1.2.pdf')
+show_or_save('fig1.2')
 
 # 1.2.3
 # added dimension is for the bias term
@@ -256,7 +256,7 @@ for i in range(0, len(ps_b)):
 
 plt.title('Linear decision boundaries circling class 1')
 
-show_or_save('fig1.3a.pdf')
+show_or_save('fig1.3a')
 
 # 1.3.b: drawn and included in pdf
 
@@ -495,7 +495,7 @@ plt.plot(p_0, p_1, 'g-')
 ax.set_xlim(prev_x)
 ax.set_ylim(prev_y)
 
-show_or_save('fig2.3a.pdf')
+show_or_save('fig2.3a')
 
 C = scipy.io.loadmat('datasetC.mat')
 Xtr = C['Xtr'].transpose()
@@ -535,7 +535,7 @@ ax.set_ylim(prev_y)
 
 plt.title('Logistic regression with non-linearly separable data')
 
-show_or_save('fig2.3b.pdf')
+show_or_save('fig2.3b')
 
 print('')
 print('2.3.c')
@@ -568,5 +568,5 @@ d = np.round(1 / (1 + np.exp(W[0,0] + W[0,1]*xx + W[0,2]*yy + \
 
 plt.contour(x, y, d, 1, colors='g')
 
-show_or_save('fig2.3c.pdf')
+show_or_save('fig2.3c')
 

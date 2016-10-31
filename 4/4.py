@@ -337,10 +337,12 @@ Xtr_c1_est = Xtr[:, (ytr_est == 1).flatten()]
 # show them as correctly classified
 Xtr_wrong = Xtr[:, (ytr_est != ytr.flatten()).flatten()]
 
+'''
 print('Mismatches at:')
 mismatches = np.where(ytr_est != ytr.flatten())
 print(mismatches)
 print(Xtr[:,mismatches])
+'''
 
 manual_AND_OR_est(Xtr, idx=mismatches)
 

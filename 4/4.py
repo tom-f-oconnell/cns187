@@ -491,14 +491,6 @@ y = prev_y[0]
 p_0 = (x, bound_x2y(x))
 p_1 = (bound_y2x(y), y)
 
-print(W)
-print(prev_x)
-print(prev_y)
-print(prev_x[0])
-print(prev_y[0])
-print(p_0)
-print(p_1)
-
 plt.plot(p_0, p_1, 'g-')
 ax.set_xlim(prev_x)
 ax.set_ylim(prev_y)
@@ -562,36 +554,19 @@ print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
 plot_by_class(Xtr, ytr)
 plt.title('Logistic regression with expanded features for nonlinear data')
 
-# TODO plot decision boundary
-
+# plot decision boundary
 ax = plt.gca()
 prev_x = ax.get_xlim()
 prev_y = ax.get_ylim()
 
 samples = 200
-#P = np.zeros((3, samples**2))
-#curr = 0
-P = np.zeros((samples, samples))
-#X = np.linspace(prev_x[0], prev_x[1], samples)
-#Y = np.linspace(prev_y[0], prev_y[1], samples)
+x = np.linspace(prev_x[0], prev_x[1], samples)
+y = np.linspace(prev_y[0], prev_y[1], samples)
+xx, yy = np.meshgrid(x, y)
+d = np.round(1 / (1 + np.exp(W[0,0] + W[0,1]*xx + W[0,2]*yy + \
+        W[0,3]*xx*yy + W[0,4]*(xx**2) + W[0,5]*(yy**2))))
 
-X = np.zeros((samples, samples))
-Y = np.zeros((samples, samples))
-
-'''
-for i, x in enumerate(np.linspace(prev_x[0], prev_x[1], samples)):
-    for j, y in enumerate(np.linspace(prev_y[0], prev_y[1], samples)):
-        X[i,j] = x
-        Y[i,j] = y
-'''
-
-plt.contour(X,Y,P)
-
-'''
-for x in np.linspace(prev_x[0], prev_x[1], samples):
-    for y in np.linspace(prev_y[0], prev_y[1], samples):
-        P[:,curr] = [x,y,logistic(W,np.array([1,x,y,x*y,x**2,y**2]), check=False)]
-'''
+plt.contour(x, y, d, 1, colors='g')
 
 show_or_save('fig2.3c.pdf')
 

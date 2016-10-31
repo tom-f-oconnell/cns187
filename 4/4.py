@@ -7,8 +7,8 @@ import scipy.io
 
 sns.set()
 
-should_plot = False
-save_figs = True
+should_plot = True
+save_figs = False
 verbose = False
 
 figpath = './figures/'
@@ -230,6 +230,10 @@ for i in range(0, len(ps_a)):
     else:
         W_0[:, curr] = [w0, w1, w2]
 
+    # TODO remove. for debugging boundary problems
+    #x2y = lambda x: (-W_0[0,curr] - W_0[1,curr]*x) / W_0[2,curr]
+    #plt.plot([pair[0,0],pair[1,0]], [x2y(pair[0,1]), x2y(pair[1,1])], 'r--')
+
     curr = curr + 1
 
 for i in range(0, len(ps_b)):
@@ -244,13 +248,17 @@ for i in range(0, len(ps_b)):
 
     # calculate linear threshold unit params for line along pair of points
     w1 = (pair[1,1] - pair[0,1]) / (pair[1,0] - pair[0,0])
-    w0 = pair[1,1] - w1 * pair[1,0]
+    w0 = (pair[1,1] - w1 * pair[1,0])
     w2 = 1
 
     if flip_sign_b[i]:
         W_0[:, curr] = [-w0, -w1, -w2]
     else:
         W_0[:, curr] = [w0, w1, w2]
+
+    # TODO remove. for debugging boundary problems
+    #x2y = lambda x: (-W_0[0,curr] - W_0[1,curr]*x) / W_0[2,curr]
+    #plt.plot([pair[0,0],pair[1,0]], [x2y(pair[0,1]), x2y(pair[1,1])], 'r--')
 
     curr = curr + 1
 
@@ -262,12 +270,14 @@ show_or_save('fig1.3a')
 
 # 1.3.c: manually implement the LTU -> AND -> OR classifier for this data
 
-def manual_AND_OR_est(X, nonlin=np.sign):
+def manual_AND_OR_est(X, idx=None, nonlin=np.sign):
     # add the column of ones for the bias weights
     X = np.concatenate((np.ones((1, X.shape[1])), X), axis=0)
     ltu = nonlin(np.dot(W_0.transpose(), X))
     if verbose:
         print(ltu)
+    if not idx is None:
+        print(ltu[:,idx])
 
     g_left = np.concatenate((np.ones((1, X.shape[1])), ltu[:len(ps_a),:]), axis=0)
     g_right = np.concatenate((np.ones((1, X.shape[1])), ltu[len(ps_a):,:]), axis=0)
@@ -327,11 +337,17 @@ Xtr_c1_est = Xtr[:, (ytr_est == 1).flatten()]
 # show them as correctly classified
 Xtr_wrong = Xtr[:, (ytr_est != ytr.flatten()).flatten()]
 
-'''
+print('Mismatches at:')
+mismatches = np.where(ytr_est != ytr.flatten())
+print(mismatches)
+print(Xtr[:,mismatches])
+
+manual_AND_OR_est(Xtr, idx=mismatches)
+
 plt.figure()
 plt.title('Estimated class labels')
-plt.scatter(Xtr_c0[0,:], Xtr_c0[1,:], c='r')
-plt.scatter(Xtr_c1[0,:], Xtr_c1[1,:],  c='b')
+plt.scatter(Xtr_c0_est[0,:], Xtr_c0_est[1,:], c='r')
+plt.scatter(Xtr_c1_est[0,:], Xtr_c1_est[1,:],  c='b')
 #plt.scatter(Xtr_wrong[0,:], Xtr_wrong[1,:], c='r', s=40)
 
 # to diagnose misclassification on the training set
@@ -355,12 +371,12 @@ if should_plot:
     plt.show()
 else:
     plt.close()
-'''
 
 # TODO visualize where the errors are?
 print('Training set accuracy: ' + str(np.sum(ytr_est == ytr.transpose()) / len(ytr)))
 print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts)))
 
+quit()
 """
 Problem 2
 """

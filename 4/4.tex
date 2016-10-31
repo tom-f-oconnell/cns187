@@ -10,6 +10,7 @@
 
 \usepackage{graphicx}
 	% package that allows you to include graphics
+\graphicspath{{figures/}}
 
 \usepackage{setspace}
 	% package that allows you to change spacing
@@ -23,7 +24,6 @@
 
 \begin{document}
 	% line of code telling latex that your document is beginning
-
 
 \title{Problem Set 4}
 
@@ -125,7 +125,6 @@ The expression for the loss function $\mathcal{L}$ for a single training example
 The loss function over all training examples is a sum of the above, normalized by the number of 
 training examples.
 
-
 \paragraph{2)} Derive the gradient of the loss function with respect to the weights.
 
 The gradient of the loss function with respect to the weights if the sum of the loss on one example 
@@ -136,6 +135,7 @@ over all the training examples.
 
 Where for each $i$,
 
+% TODO wrong i think. doesn't lead to next step.
 \[ \frac{\partial\theta(x)}{\partial w_i} = x_i \]
 
 \[ \frac{\partial \mathcal{L}}{\partial w} = \frac{yx}{1 + e^{y\theta(x)}} \]
@@ -144,14 +144,21 @@ Since the gradient is linear with respect to summation, the gradient over all tr
 
 \paragraph{3)} Plots for the logistic regression programming exercises.
 
-% TODO list accuracies
+\subparagraph{a)} Logistic regression on dataset B, which is linearly separable.\\
 
-\subparagraph{a)} Logistic regression on dataset B, which is linearly separable.
+Since the data is linearly separable, we would expect perfect classification performance with 
+this generalized linear model, and we do get $100\%$ accuracy on the training and test sets.
 
-\subparagraph{b)} Logistic regression on dataset C, which is not linearly separable.
+\subparagraph{b)} Logistic regression on dataset C, which is not linearly separable.\\
+
+Since the dataset is not linearly separable, training directly on the feature vectors yields poor 
+classification accuracy, with a training set accuracy of $0.813$ and a test set accuracy of $0.744$.
 
 \subparagraph{c)} Logistic regression on the same dataset C, but with inputs expanded into all 
-    pairwise products before linearly combining into the logistic function input.
+    pairwise products before linearly combining into the logistic function input.\\
+
+Now, both the training and testing accuracies are $100\%$, with the a product between the two 
+original features and each of the original features squared concatenated on to the feature vectors.
 
 \end{document}
 	% line of code telling latex that your document is ending. If you leave this out, you'll get an error

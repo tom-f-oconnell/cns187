@@ -8,11 +8,24 @@ import scipy.io
 sns.set()
 
 should_plot = True
+save_figs = False
 verbose = False
 
-def plot_by_class(X, y):
+figpath = './figures/'
 
-    plt.figure()
+plt.close('all')
+
+def show_or_save(name):
+    if save_figs:
+        plt.savefig(figpath + name)
+        
+    if should_plot:
+        plt.show()
+    else:
+        plt.close()
+
+def plot_by_class(X, y):
+    fig = plt.figure()
 
     if X.shape[0] == y.shape[0]:
         X_c0 = X[(y == 0).flatten(), :]
@@ -27,8 +40,7 @@ def plot_by_class(X, y):
         plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
         plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
 
-    plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
-    plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
+    return fig
 
 """ Problem 1.2 """
 
@@ -39,20 +51,20 @@ or_output = np.array([1, 1, 1, 0])
 # 1.2.1
 print('Problem 1.2.1')
 
-if should_plot:
-    plt.scatter(or_x, or_y, c=or_output)
-    # TODO make bold
-    plt.xlabel('x1 truth value')
-    plt.ylabel('x2 truth value')
-    plt.title('OR function of x1 and x2')
-    # TODO legend
+plt.scatter(or_x, or_y, c=or_output)
+# TODO make bold
+plt.xlabel('x1 truth value')
+plt.ylabel('x2 truth value')
+plt.title('OR function of x1 and x2')
 
-    # 2.2
-    # (of course this is not the only correct decision boundary to 
-    #  separate output of the OR function)
-    plt.plot([-0.2, 1], [1, -0.2], 'r-')
-    plt.xlim(-0.2, 1.2)
-    plt.ylim(-0.2, 1.2)
+# 2.2
+# (of course this is not the only correct decision boundary to 
+#  separate output of the OR function)
+mine, = plt.plot([-0.2, 1], [1, -0.2], 'r-', label='Hand picked')
+plt.xlim(-0.2, 1.2)
+plt.ylim(-0.2, 1.2)
+
+show_or_save('fig1.2.pdf')
 
 # 1.2.3
 # added dimension is for the bias term
@@ -69,13 +81,14 @@ training_set = np.concatenate((features, labels), axis=1)
 # for the bias term
 X = np.concatenate((np.ones((training_set.shape[0], 1)), training_set), axis=1)
 
-print('Training set:')
-print(training_set)
-print('')
+if verbose:
+    print('Training set:')
+    print(training_set)
+    print('')
 
-print('X:')
-print(X)
-print('')
+    print('X:')
+    print(X)
+    print('')
 
 def nonlinearity(x):
     ''' Receives w*x + b as input '''
@@ -146,9 +159,8 @@ p_0 = (x, bound_x2y(x))
 y = -0.2
 p_1 = (bound_y2x(y), y)
 
-if should_plot:
-    plt.plot(p_0, p_1, 'g-')
-    plt.show()
+learned, = plt.plot(p_0, p_1, 'g-', label='Perceptron learned')
+plt.legend(handles=[mine, learned])
 
 """ Problem 1.3 """
 
@@ -165,8 +177,7 @@ ytr = A['ytr']
 Xts = A['Xts']
 yts = A['yts']
 
-if should_plot:
-    plt.figure()
+plt.figure()
 
 # 1.3.a: plot the data and draw linear boundaries that could collectively
 # be used to classify the data (through ANDS and ORs)
@@ -202,10 +213,9 @@ for i in range(0, len(ps_a)):
     else:
         pair = np.array([ps_a[i, :], ps_a[0, :]])
 
-    if should_plot:
-        plt.plot(pair[:,0], pair[:,1], 'g-')
-        offset = 0.1
-        plt.text(np.mean(pair[:,0]) - offset, np.mean(pair[:,1]), str(curr), size=15)
+    plt.plot(pair[:,0], pair[:,1], 'g-')
+    offset = 0.1
+    plt.text(np.mean(pair[:,0]) - offset, np.mean(pair[:,1]), str(curr), size=15)
 
     # calculate linear threshold unit params for line along pair of points
     w1 = (pair[1,1] - pair[0,1]) / (pair[1,0] - pair[0,0])
@@ -228,10 +238,9 @@ for i in range(0, len(ps_b)):
     else:
         pair = np.array([ps_b[i, :], ps_b[0, :]])
 
-    if should_plot:
-        plt.plot(pair[:,0], pair[:,1], 'g-')
-        offset = 0.1
-        plt.text(np.mean(pair[:,0]) - offset, np.mean(pair[:,1]), str(curr), size=15)
+    plt.plot(pair[:,0], pair[:,1], 'g-')
+    offset = 0.1
+    plt.text(np.mean(pair[:,0]) - offset, np.mean(pair[:,1]), str(curr), size=15)
 
     # calculate linear threshold unit params for line along pair of points
     w1 = (pair[1,1] - pair[0,1]) / (pair[1,0] - pair[0,0])
@@ -245,9 +254,9 @@ for i in range(0, len(ps_b)):
 
     curr = curr + 1
 
-if should_plot:
-    plt.title('Linear decision boundaries circling class 1')
-    plt.show()
+plt.title('Linear decision boundaries circling class 1')
+
+show_or_save('fig1.3a.pdf')
 
 # 1.3.b: drawn and included in pdf
 
@@ -314,16 +323,16 @@ yts_est = manual_AND_OR_est(Xts)
 
 Xtr_c0_est = Xtr[:, (ytr_est == 0).flatten()]
 Xtr_c1_est = Xtr[:, (ytr_est == 1).flatten()]
-# TODO i'm confused, because this has points, but the above seems to
+# this has points, but the above seems to
 # show them as correctly classified
 Xtr_wrong = Xtr[:, (ytr_est != ytr.flatten()).flatten()]
 
-if should_plot:
-    plt.figure()
-    plt.title('Estimated class labels')
-    plt.scatter(Xtr_c0[0,:], Xtr_c0[1,:], c='r')
-    plt.scatter(Xtr_c1[0,:], Xtr_c1[1,:],  c='b')
-    #plt.scatter(Xtr_wrong[0,:], Xtr_wrong[1,:], c='r', s=40)
+'''
+plt.figure()
+plt.title('Estimated class labels')
+plt.scatter(Xtr_c0[0,:], Xtr_c0[1,:], c='r')
+plt.scatter(Xtr_c1[0,:], Xtr_c1[1,:],  c='b')
+#plt.scatter(Xtr_wrong[0,:], Xtr_wrong[1,:], c='r', s=40)
 
 # to diagnose misclassification on the training set
 for i in range(0, len(ps_a)):
@@ -332,8 +341,7 @@ for i in range(0, len(ps_a)):
     else:
         pair = np.array([ps_a[i, :], ps_a[0, :]])
 
-    if should_plot:
-        plt.plot(pair[:,0], pair[:,1], 'g-')
+    plt.plot(pair[:,0], pair[:,1], 'g-')
 
 for i in range(0, len(ps_b)):
     if i < len(ps_b) - 1:
@@ -341,42 +349,40 @@ for i in range(0, len(ps_b)):
     else:
         pair = np.array([ps_b[i, :], ps_b[0, :]])
     
-    if should_plot:
-        plt.plot(pair[:,0], pair[:,1], 'g-')
+    plt.plot(pair[:,0], pair[:,1], 'g-')
 
 if should_plot:
     plt.show()
+else:
+    plt.close()
+'''
 
 # TODO visualize where the errors are?
 print('Training set accuracy: ' + str(np.sum(ytr_est == ytr.transpose()) / len(ytr)))
-print(ytr.shape)
-print(ytr_est.shape)
-print(ytr[(ytr_est != ytr.transpose()).flatten()])
-print(ytr_est[(ytr_est != ytr.transpose()).flatten()])
 print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts)))
-
 
 """
 Problem 2
 """
 
-def logistic(W, X):
-    #print(W.shape)
-    #print(X.shape)
+print('')
+print('Problem 2.3')
+
+def logistic(W, X, check=True):
+    if check and X.shape[1] != W.shape[1]:
+        X = np.concatenate((np.ones((X.shape[0], 1)), X), axis=1)
     return (1 / (1 + np.exp((-1) * np.dot(W, X.transpose())))).transpose()
 
 def logistic_regression(X, y):
     '''
     # only for current version of cross-entropy cost function
-    y = np.copy(y)
+    y = y.astype(dtype=np.int16)
     y[y == 0] = -1
     '''
 
     print('Fitting logistic regression parameters...')
     # add the column of ones for the bias weights
     X = np.concatenate((np.ones((X.shape[0], 1)), X), axis=1)
-
-    print(X)
 
     # initial parameter guesses
     # only free parameters are the bias and input component weights
@@ -393,7 +399,6 @@ def logistic_regression(X, y):
     # fit the parameters using gradient descent
     while True:
         y_est = logistic(W, X)
-        # TODO simplify?
         error = (1/N) * np.sum((-y)*np.log(y_est) - np.log(1-y_est)*(1-y))
 
         tmp = np.zeros(W.shape)
@@ -405,9 +410,7 @@ def logistic_regression(X, y):
         error_grad = (1/N) * tmp
 
         '''
-        # TODO vectorize
         # "cross-entropy" cost function
-        # TODO is this cost func convex?
         # note: this cost function relies on y being in {-1,1}
         error = 0
         for n in range(0, N):
@@ -420,43 +423,45 @@ def logistic_regression(X, y):
         # standard gradient descent update
         tmp = np.zeros((1,3))
         for n in range(0, N):
-            # TODO first X slice transposed correctly?
             # note the lack of the negative sign in the exp term
             tmp = tmp + (-y[n] * X[n,:]) / \
                     (1 + np.exp(y[n] * np.dot(W, X[n,:].transpose())))
             #print(np.dot(W, X[n,:]).shape)
         error_grad = tmp * (1/N)
-
+        '''
+        '''
         # stochastic gradient descent update
         n = np.random.randint(0, N)
         error_grad = (-y[n] * X[n,:]) / (1 + np.exp(y[n] * np.dot(W, X[n,:].transpose())))
         '''
 
-        print('error=' + str(error))
-        #print(error_grad)
-        print('accuracy=' + str(accuracy(y_est, y)))
+        if verbose:
+            print('error=' + str(error))
+            #print(error_grad)
+            #y_est = logistic(W, X)
+            print('accuracy=' + str(accuracy(y_est, y)))
 
-
-        #print(y_est[:20])
+        #print(np.sign(y_est[:20]))
         #print(y[:20])
-        #break
     
         W = W - rate * error_grad
         
-        #if np.isclose(last_error, error):
-        if np.isnan(error) or last_error == error:
+        if np.isnan(error) or np.isclose(last_error, error):
             break
         last_error = error
 
     return W
 
 def accuracy(y_est, y):
-    return np.sum(np.round(y_est) == y) / np.size(y)
+    # abstracts away some of the sign convention stuff
+    if np.any(y == -1):
+        return np.sum(np.sign(y_est) == y) / np.size(y)
+    else:
+        return np.sum(np.round(y_est) == y) / np.size(y)
 
 # 2.3
 
 B = scipy.io.loadmat('datasetB.mat')
-# TODO this may be transposed
 Xtr = B['Xtr']
 ytr = B['ytr']
 Xts = B['Xts']
@@ -464,11 +469,13 @@ yts = B['yts']
 
 W = logistic_regression(Xtr, ytr)
 
-if should_plot:
-    plot_by_class(Xtr, ytr)
+print('2.3.a')
+print('Training on linearly separable dataset')
+print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
+print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
 
-# TODO should not be 3x3
-#print(W.shape)
+plot_by_class(Xtr, ytr)
+plt.title('Logistic regression for linearly separable data')
 
 # evaluates the decision boundary at x2 to find the corresponding x1
 bound_x2y = lambda x2: (-W[0,0] - W[0,2]*x2) / W[0,1]
@@ -484,18 +491,107 @@ y = prev_y[0]
 p_0 = (x, bound_x2y(x))
 p_1 = (bound_y2x(y), y)
 
-if should_plot:
-    plt.plot(p_0, p_1, 'g-')
-    ax.set_xlim(prev_x)
-    ax.set_ylim(prev_y)
-    plt.show()
+print(W)
+print(prev_x)
+print(prev_y)
+print(prev_x[0])
+print(prev_y[0])
+print(p_0)
+print(p_1)
 
-'''
+plt.plot(p_0, p_1, 'g-')
+ax.set_xlim(prev_x)
+ax.set_ylim(prev_y)
+
+show_or_save('fig2.3a.pdf')
+
 C = scipy.io.loadmat('datasetC.mat')
-Xtr = C['Xtr']
+Xtr = C['Xtr'].transpose()
 ytr = C['ytr']
-Xts = C['Xts']
+Xts = C['Xts'].transpose()
 yts = C['yts']
+
+print('')
+print('2.3.b')
+print('Training directly on non-linearly separable dataset')
+W = logistic_regression(Xtr, ytr)
+
+print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
+print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
+
+plot_by_class(Xtr, ytr)
+
+ax = plt.gca()
+prev_x = ax.get_xlim()
+prev_y = ax.get_ylim()
+
+x_1 = -3
+x_2 = 3
+
+# evaluates the decision boundary at x2 to find the corresponding x1
+bound_x2y = lambda x2: (-W[0,0] - W[0,2]*x2) / W[0,1]
+bound_y2x = lambda x1: (-W[0,0] - W[0,1]*x1) / W[0,2]
+
+p_0 = (x_1, bound_x2y(x_1))
+p_1 = (x_2, bound_x2y(x_2))
+
+#?
+plt.plot([p_0[1], p_1[1]], [p_0[0], p_1[0]] , 'g-')
+
+ax.set_xlim(prev_x)
+ax.set_ylim(prev_y)
+
+plt.title('Logistic regression with non-linearly separable data')
+
+show_or_save('fig2.3b.pdf')
+
+print('')
+print('2.3.c')
+print('Training on non-linearly separable dataset with expanded features')
+
+Xtr = np.array([Xtr[:,0], Xtr[:,1], Xtr[:,0] * Xtr[:,1], \
+        Xtr[:,0] * Xtr[:,0], Xtr[:,1] * Xtr[:,1]]).transpose()
+Xts = np.array([Xts[:,0], Xts[:,1], Xts[:,0] * Xts[:,1], \
+        Xts[:,0] * Xts[:,0], Xts[:,1] * Xts[:,1]]).transpose()
+
+W = logistic_regression(Xtr, ytr)
+
+print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
+print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
+
+plot_by_class(Xtr, ytr)
+plt.title('Logistic regression with expanded features for nonlinear data')
+
+# TODO plot decision boundary
+
+ax = plt.gca()
+prev_x = ax.get_xlim()
+prev_y = ax.get_ylim()
+
+samples = 200
+#P = np.zeros((3, samples**2))
+#curr = 0
+P = np.zeros((samples, samples))
+#X = np.linspace(prev_x[0], prev_x[1], samples)
+#Y = np.linspace(prev_y[0], prev_y[1], samples)
+
+X = np.zeros((samples, samples))
+Y = np.zeros((samples, samples))
+
+'''
+for i, x in enumerate(np.linspace(prev_x[0], prev_x[1], samples)):
+    for j, y in enumerate(np.linspace(prev_y[0], prev_y[1], samples)):
+        X[i,j] = x
+        Y[i,j] = y
 '''
 
-# TODO remap features in non linearly separable C
+plt.contour(X,Y,P)
+
+'''
+for x in np.linspace(prev_x[0], prev_x[1], samples):
+    for y in np.linspace(prev_y[0], prev_y[1], samples):
+        P[:,curr] = [x,y,logistic(W,np.array([1,x,y,x*y,x**2,y**2]), check=False)]
+'''
+
+show_or_save('fig2.3c.pdf')
+

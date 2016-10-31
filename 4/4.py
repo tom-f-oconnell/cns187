@@ -7,7 +7,7 @@ import scipy.io
 
 sns.set()
 
-should_plot = False
+should_plot = True
 verbose = False
 
 def plot_by_class(X, y):
@@ -361,13 +361,16 @@ Problem 2
 """
 
 def logistic(W, X):
-    print(W.shape)
-    print(X.shape)
-    return 1 / (1 + np.exp((-1) * np.dot(W, X.transpose())))
+    #print(W.shape)
+    #print(X.shape)
+    return (1 / (1 + np.exp((-1) * np.dot(W, X.transpose())))).transpose()
 
 def logistic_regression(X, y):
+    '''
+    # only for current version of cross-entropy cost function
     y = np.copy(y)
     y[y == 0] = -1
+    '''
 
     print('Fitting logistic regression parameters...')
     # add the column of ones for the bias weights
@@ -380,7 +383,7 @@ def logistic_regression(X, y):
     W = np.zeros((1, X.shape[1]))
     #N = X.shape[1]
     # schedule?
-    rate = 0.01
+    rate = 0.5
 
     last_error = np.nan
 
@@ -389,55 +392,30 @@ def logistic_regression(X, y):
 
     # fit the parameters using gradient descent
     while True:
-        # TODO make sure right sign convention with y
-        # may need to loop to eval sum if dot products dont make sense in this order
-        '''
-        print('y,w,x')
-        print(y.shape)
-        print(W.shape)
-        print(X.shape)
-        '''
-
-        # "cross-entropy" error term
-        #print(np.dot(-y, np.sum(np.dot(W, X.transpose()))).shape)
-
-        # for first training example
-        """
-        print(X.shape)
-        print(W.shape)
-        print(np.dot(W, X[0,:].transpose()).shape)
-        print(np.dot(W, X.transpose()).shape)
-        print(np.dot(-y, np.dot(W, X[0,:].transpose())).shape)
-        """
-
-        # average loss over all training examples
+        y_est = logistic(W, X)
         # TODO simplify?
-        #y_est = logistic(W, X)
-        #error = (1/X.shape[0]) * np.sum((-y)*np.log(y_est) - np.log(1-y_est)*(1-y))
+        error = (1/N) * np.sum((-y)*np.log(y_est) - np.log(1-y_est)*(1-y))
+
+        tmp = np.zeros(W.shape)
+
+        # it didn't seem like this would have been any different (going component by component?)
+        for j in range(0, X.shape[1]):
+            for n in range(0, N):
+                tmp[0,j] = tmp[0,j] + (y_est[n] - y[n]) * X[n,j]
+        error_grad = (1/N) * tmp
 
         '''
-        print(W.shape)
-        print(X.shape)
-        print(np.dot(W, X.transpose()).shape)
-        print(y.shape)
-        linear_error = np.dot(-y, np.dot(W, X.transpose()))
-        exp_term = np.exp(linear_error)
-        print(linear_error.shape)
-        print(exp_term.shape)
-        error = (1/N) * np.sum(np.log(1 + exp_term))
-        print('error=' + str(error))
-        '''
-
         # TODO vectorize
+        # "cross-entropy" cost function
+        # TODO is this cost func convex?
         # note: this cost function relies on y being in {-1,1}
-        # and W * X being in [0,1]
         error = 0
         for n in range(0, N):
             error = error + np.log(1 + np.exp((-y[n]) * np.dot(W, X[n,:].transpose())))
-            print(np.max(np.dot(W, X[n,:].transpose())))
-            print(np.min(np.dot(W, X[n,:].transpose())))
+            #print(np.max(np.dot(W, X[n,:].transpose())))
+            #print(np.min(np.dot(W, X[n,:].transpose())))
         error = (1/N) * error
-        print('error=' + str(error))
+        #print('cross ent error=' + str(error))
 
         # standard gradient descent update
         tmp = np.zeros((1,3))
@@ -450,77 +428,30 @@ def logistic_regression(X, y):
         error_grad = tmp * (1/N)
 
         # stochastic gradient descent update
-        
+        n = np.random.randint(0, N)
+        error_grad = (-y[n] * X[n,:]) / (1 + np.exp(y[n] * np.dot(W, X[n,:].transpose())))
+        '''
 
+        print('error=' + str(error))
+        #print(error_grad)
+        print('accuracy=' + str(accuracy(y_est, y)))
+
+
+        #print(y_est[:20])
+        #print(y[:20])
+        #break
+    
         W = W - rate * error_grad
         
-        if error > last_error or np.isclose(last_error, error):
+        #if np.isclose(last_error, error):
+        if np.isnan(error) or last_error == error:
             break
         last_error = error
 
-        '''
-        # TODO i think this might be wrong with the second sum
-        linear_error = np.dot(-y, np.dot(W, X.transpose()))
-        exp_term = np.exp(linear_error)
-        if not np.any(exp_term == np.inf):
-            error = (1/N) * np.sum(np.log(1 + exp_term))
-            print('error=' + str(error))
-
-        # if we are getting an overflow error, use an approximation
-        # TODO but might also have issues w/ gradient?
-        else:
-            # TODO only works OK for the entries that are large
-            # TODO prob that i can be negative?
-            error = (1/N) * np.sum(linear_error)
-            print('approximate error=' + str(error))
-
-        '''
-        '''
-        print(np.dot(-y, np.dot(W, X.transpose())))
-        print(1 + np.exp(np.dot(-y, np.dot(W, X.transpose()))))
-        '''
-
-        """
-        # TODO vectorize
-        tmp = np.zeros((1,3))
-        #print('')
-        print_idx = X.shape[0] - 1
-
-        for i in range(0, X.shape[0]):
-            '''
-            if i == print_idx:
-                print(tmp)
-                print((y[i] * X[i,:]) / (1 + np.exp(y[i] * np.dot(W, X[i,:].transpose()))))
-
-            '''
-            tmp = tmp + (y[i] * X[i,:]) / (1 + np.exp(y[i] * np.dot(W, X[i,:].transpose())))
-
-            '''
-            if i == print_idx:
-                print((y[i] * X[i,:]).shape)
-                print((1 + np.exp(y[i] * np.dot(W, X[i,:].transpose()))).shape)
-                print(((y[i] * X[i,:]) / (1 + np.exp(y[i] * np.dot(W, X[i,:].transpose())))).shape)
-                print(tmp)
-            '''
-
-            #3,
-            #print(np.dot(X[i,:], W).shape)
-        
-        #print(tmp)
-        error_grad = -(1/N) * tmp
-        """
-
-        '''
-        print('')
-
-        print(W.shape)
-        print(error_grad.shape)
-        print(error_grad)
-
-        '''
-        
-
     return W
+
+def accuracy(y_est, y):
+    return np.sum(np.round(y_est) == y) / np.size(y)
 
 # 2.3
 
@@ -540,8 +471,8 @@ if should_plot:
 #print(W.shape)
 
 # evaluates the decision boundary at x2 to find the corresponding x1
-bound_x2y = lambda x2: (-weights[0] - weights[2]*x2) / weights[1]
-bound_y2x = lambda x1: (-weights[0] - weights[1]*x1) / weights[2]
+bound_x2y = lambda x2: (-W[0,0] - W[0,2]*x2) / W[0,1]
+bound_y2x = lambda x1: (-W[0,0] - W[0,1]*x1) / W[0,2]
 
 # now plot the learned decision boundary
 # decision boundary: x1 = (-w0 - w2*x2) / w1

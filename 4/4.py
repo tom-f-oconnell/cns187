@@ -376,7 +376,6 @@ else:
 print('Training set accuracy: ' + str(np.sum(ytr_est == ytr.transpose()) / len(ytr)))
 print('Test set accuracy: ' + str(np.sum(yts_est == yts.transpose()) / len(yts)))
 
-quit()
 """
 Problem 2
 """

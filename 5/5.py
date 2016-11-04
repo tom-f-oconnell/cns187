@@ -52,8 +52,8 @@ def logistic(X):
     return (1 / (1 + np.exp((-1) * X.transpose()))).transpose()
 
 # TODO check
-def d_logistic(W, X):
-    return logistic(X) * (1 - logsitic(X))
+def d_logistic(X):
+    return logistic(X) * (1 - logistic(X))
 
 def add_ones(X):
     # TODO change to make math line up in eval_net if needed
@@ -91,6 +91,10 @@ def eval_net(W, X, ret_intermediate=False, add_ones=True):
     for l in range(0, len(W)):
         # TODO check output dimensions
 
+        print(l)
+        print(W[l].transpose().shape)
+        print(g.shape)
+
         # calculate linear input to units in layer `l`
         S_l = np.dot(W[l].transpose(), g)
         
@@ -99,12 +103,12 @@ def eval_net(W, X, ret_intermediate=False, add_ones=True):
 
         # pass the linearly weighted inputs through nonlinearity
         # which in this case is this logistic function
-        g = logistic(S)
+        g = logistic(S_l)
 
         if ret_intermediate:
             G.append(g)
 
-    if ret_activations:
+    if ret_intermediate:
         # g (should be) = G[-1], but for convenience
         return (g, S, G)
     else:
@@ -123,6 +127,7 @@ def backprop(W, X, y, y_est, S, G, rate):
     Uses the backpropagation algorithm to adjust the weights in place 
     by gradient descent.
     '''
+    print('backprop')
 
     # dL/dw^l_{ij} = (dL/ds^l_j)(ds^l_j/dw^l_{ij})
     # ds^l_j/dw^l_{ij} = g^{l-1}_i, where g^l(x) = logistic((w^l)^T g^{l-1})
@@ -134,11 +139,27 @@ def backprop(W, X, y, y_est, S, G, rate):
     # L = (g^L_i - y_i)^2 => dL/dg^l_j = 2*(g^L_i - y_i)
     # delta^L_i = dL/ds^L_i
     # TODO make sure there is an S for the last layer
-    delta = 2 * (y_est - y) * d_logistic(S[-1])
+    # TODO abs?
+    # TODO TODO TODO this has got to be wrong
+    #delta = np.sum(2 * (y_est - y.transpose()) * d_logistic(S[-1]))
+    delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+    print(np.sum(np.abs(y_est - y.transpose())))
+    print(y_est.shape)
+    print(y.shape)
+    print(d_logistic(S[-1]).shape)
+    print(delta.shape)
 
+    '''
     # update the weights for the last layer
     # ds^l_j/dw^l_{ij} = g^L_j (and in general?)
-    W[-1] = W[-1] - rate * delta * G[-1]
+    print(W[-1].shape)
+    print((rate * delta * G[-1]).shape)
+    print(G[-1].shape)
+    print(delta.shape)
+    print(np.dot(delta, G[-1]).shape)
+    W[-1] = W[-1] - rate * np.dot(delta, G[-1])
+    print(W[-1].shape)
+    '''
 
     # now recursively, for the other layers
     l = len(W) - 1
@@ -147,20 +168,30 @@ def backprop(W, X, y, y_est, S, G, rate):
         # actually propagate back one layer
         # i.e. use the delta from the previous layer
         # to calculate the delta for the current layer
-        sum_term = np.zeros(W[l].shape[0])
+        # TODO 
+        sum_term = np.zeros((W[l].shape[0], y.shape[0]))
+        print(sum_term.shape)
         # TODO vectorize
         # shape[1] should be the number of units 'in' layer l (the output of)
         # TODO check
         for j in range(0, W[l].shape[1]):
-            sum_term = sum_term + delta[j] * W[l][:,j]
+            try:
+                print(delta[j].shape)
+                print(W[l].shape)
+                sum_term = sum_term + delta[j] * W[l][:,j]
+            except IndexError:
+                sum_term = sum_term + delta * W[l][:,j]
 
+        # TODO again. must sum be wrong? maybe do iteratively instead? SGD?
+        #delta = np.sum(d_logistic(S[l-1]), axis=1) * sum_term
         delta = d_logistic(S[l-1]) * sum_term
 
         # update the weights of the current layer
         # uses the same formula as the last layer does (could collapse)
         # what would happen if you had different learning rates for different layers?
         # work on this?
-        W[l-1] = W[l-1] - rate * delta * G[l-1]
+        #W[l-1] = W[l-1] - rate * delta * G[l-1]
+        W[l] = W[l] - rate * delta * G[l-1]
     
 
     return None
@@ -206,9 +237,6 @@ def train_net(X, y, dims):
 
         W.append(W_l)
 
-    W = np.zeros((len(dims) + 1, 1, X.shape[1]))
-    N = X.shape[1]
-
     # learning rate
     # could put on a schedule
     #rate = 0.5
@@ -225,20 +253,20 @@ def train_net(X, y, dims):
     while True:
         # forward prop for our estimate
         y_est, S, G = eval_net(W, X, ret_intermediate=True, add_ones=False)
-        loss = loss(y, y_est)
+        L = loss(y, y_est)
 
         # weights adjusted in place
         # TODO verify that this is the case
         backprop(W, X, y, y_est, S, G, rate)
 
         if verbose:
-            print('loss=' + str(loss))
+            print('loss=' + str(L))
             print('accuracy=' + str(accuracy(y_est, y)))
 
         # TODO break on a certain # of iterations
-        if np.isnan(loss) or np.isclose(last_loss, loss):
+        if np.isnan(L) or np.isclose(last_loss, L):
             break
-        last_loss = loss
+        last_loss = L
 
     return W
 

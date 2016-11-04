@@ -174,16 +174,30 @@ def backprop(W, X, y, y_est, S, G, rate):
         # TODO vectorize
         # shape[1] should be the number of units 'in' layer l (the output of)
         # TODO check
-        for j in range(0, W[l].shape[1]):
-            try:
-                print(delta[j].shape)
-                print(W[l].shape)
-                sum_term = sum_term + delta[j] * W[l][:,j]
-            except IndexError:
-                sum_term = sum_term + delta * W[l][:,j]
+        print("W[l] shape")
+        print(W[l].shape)
+        for j in range(0, W[l].shape[0]):
+            print(j)
+#            try:
+            print(delta.shape)
+            print(delta[j])
+            print(delta[j].shape)
+            print(W[l].shape)
+            #sum_term = sum_term + delta[j] * W[l][:,j]
+            sum_term = sum_term + np.outer(delta[j], W[l][:,j]).transpose()
+        '''
+                    except IndexError:
+                        #sum_term = sum_term + delta * W[l][:,j]
+                        print(delta.shape)
+                        print(W[l].shape)
+                        print(W[l][:,j].shape)
+                        print(np.outer(delta, W[l][:,j]).transpose().shape)
 
-        # TODO again. must sum be wrong? maybe do iteratively instead? SGD?
-        #delta = np.sum(d_logistic(S[l-1]), axis=1) * sum_term
+                        sum_term = sum_term + np.outer(delta, W[l][:,j]).transpose()
+                # TODO again. must sum be wrong? maybe do iteratively instead? SGD?
+                #delta = np.sum(d_logistic(S[l-1]), axis=1) * sum_term
+        '''
+
         delta = d_logistic(S[l-1]) * sum_term
 
         # update the weights of the current layer

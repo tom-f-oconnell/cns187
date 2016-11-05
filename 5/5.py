@@ -91,9 +91,11 @@ def eval_net(W, X, ret_intermediate=False, add_ones=True):
     for l in range(0, len(W)):
         # TODO check output dimensions
 
+        '''
         print(l)
         print(W[l].transpose().shape)
         print(g.shape)
+        '''
 
         # calculate linear input to units in layer `l`
         S_l = np.dot(W[l].transpose(), g)
@@ -120,14 +122,19 @@ def loss(y, y_est):
     Returns the squared error between provided estimates and true values.
     '''
 
-    return np.sum(np.square(y_est - y))
+    if y_est.shape == y.shape:
+        return np.sum(np.square(y_est - y))
+    elif y_est.shape == y.transpose().shape:
+        return np.sum(np.square(y_est - y.transpose()))
+    else:
+        assert False
     
 def backprop(W, X, y, y_est, S, G, rate):
     '''
     Uses the backpropagation algorithm to adjust the weights in place 
     by gradient descent.
     '''
-    print('backprop')
+    #print('backprop')
 
     # dL/dw^l_{ij} = (dL/ds^l_j)(ds^l_j/dw^l_{ij})
     # ds^l_j/dw^l_{ij} = g^{l-1}_i, where g^l(x) = logistic((w^l)^T g^{l-1})
@@ -136,20 +143,23 @@ def backprop(W, X, y, y_est, S, G, rate):
     # TODO correct subscripts?
     # for the last layer; the base case
     # L in superscript is the last layer, otherwise L = Loss
+    '''
     # L = (g^L_i - y_i)^2 => dL/dg^l_j = 2*(g^L_i - y_i)
     # delta^L_i = dL/ds^L_i
     # TODO make sure there is an S for the last layer
     # TODO abs?
     # TODO TODO TODO this has got to be wrong
     #delta = np.sum(2 * (y_est - y.transpose()) * d_logistic(S[-1]))
+    '''
     delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+
+    '''
     print(np.sum(np.abs(y_est - y.transpose())))
     print(y_est.shape)
     print(y.shape)
     print(d_logistic(S[-1]).shape)
-    print(delta.shape)
+    #print("first delta " + str(delta.shape))
 
-    '''
     # update the weights for the last layer
     # ds^l_j/dw^l_{ij} = g^L_j (and in general?)
     print(W[-1].shape)
@@ -165,24 +175,62 @@ def backprop(W, X, y, y_est, S, G, rate):
     l = len(W) - 1
     # TODO >= 0 or > 0? should i be doing the weight update above?
     while l > 0:
+        #print('LAYER=' + str(l))
+
+        # to make sure the dimensions don't change
+        dims = [w.shape for w in W]
+
+        # update the weights of the current layer
+        # uses the same formula as the last layer does (could collapse)
+        # what would happen if you had different learning rates for different layers?
+        # work on this?
+        #W[l-1] = W[l-1] - rate * delta * G[l-1]
+        '''
+        print("delta " + str(delta.shape))
+        print(G[l].shape)
+        print("G[l-1] " + str(G[l-1].shape))
+        print((delta * G[l-1]).shape)
+        print((rate * np.sum(delta * G[l-1], axis=1)).shape)
+        print(W[l].shape)
+
+        print(W[l].size)
+        print((rate * np.sum(delta * G[l-1], axis=1)).size)
+        '''
+        #W[l] = W[l] - (rate * np.sum(delta * G[l-1], axis=1)).reshape(W[l].shape)
+        # TODO check size
+        # the delta is from l-1
+        # TODO how to make G be from one layer less than l?
+        #W[l] = W[l] - (rate * np.dot(delta, G[l-1]))
+        W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
+
+        # the weights matrices should not have changed dimensions
+        for w, d in zip(W, dims):
+            try:
+                assert w.shape == d
+            except AssertionError:
+                print(str(w.shape) + ' differed from previous ' + str(d))
+                assert False
+
+        #print('just updated weights')
+
         # actually propagate back one layer
         # i.e. use the delta from the previous layer
         # to calculate the delta for the current layer
-        # TODO 
         sum_term = np.zeros((W[l].shape[0], y.shape[0]))
-        print(sum_term.shape)
+        #print(sum_term.shape)
+
         # TODO vectorize
         # shape[1] should be the number of units 'in' layer l (the output of)
         # TODO check
-        print("W[l] shape")
-        print(W[l].shape)
-        for j in range(0, W[l].shape[0]):
+        #print("W[l] shape")
+        #print(W[l].shape)
+        for j in range(0, W[l].shape[1]):
+            '''
             print(j)
 #            try:
-            print(delta.shape)
-            print(delta[j])
             print(delta[j].shape)
-            print(W[l].shape)
+            print(delta.shape)
+            '''
             #sum_term = sum_term + delta[j] * W[l][:,j]
             sum_term = sum_term + np.outer(delta[j], W[l][:,j]).transpose()
         '''
@@ -196,18 +244,18 @@ def backprop(W, X, y, y_est, S, G, rate):
                         sum_term = sum_term + np.outer(delta, W[l][:,j]).transpose()
                 # TODO again. must sum be wrong? maybe do iteratively instead? SGD?
                 #delta = np.sum(d_logistic(S[l-1]), axis=1) * sum_term
-        '''
 
+        print('')
+
+        print('sumterm shape ' + str(sum_term.shape))
+        '''
+        # delta for layer l-1
         delta = d_logistic(S[l-1]) * sum_term
 
-        # update the weights of the current layer
-        # uses the same formula as the last layer does (could collapse)
-        # what would happen if you had different learning rates for different layers?
-        # work on this?
-        #W[l-1] = W[l-1] - rate * delta * G[l-1]
-        W[l] = W[l] - rate * delta * G[l-1]
+        # now move one layer closer to the input
+        l = l - 1
     
-
+    #print('leaving backprop')
     return None
 
 def train_net(X, y, dims):
@@ -240,21 +288,21 @@ def train_net(X, y, dims):
     # TODO will need to re-encode multiclass output in one-hot format or this wont work
     # dims.append(y.shape[1])
     dims = [X.shape[0]] + dims + [y.shape[1]]
-    print(dims)
+    #print(dims)
 
     # initialize all weights to random values
     for l in range(0, len(dims) - 1):
 
         # TODO random enough? should they all be positive (subtract 0.5?)?
         W_l = np.random.rand(dims[l], dims[l+1])
-        print(W_l.shape)
+        #print(W_l.shape)
 
         W.append(W_l)
 
     # learning rate
     # could put on a schedule
-    #rate = 0.5
-    rate = 0.01
+    # 0.01 is too high. oscillations.
+    rate = 0.001
 
     last_loss = np.nan
 
@@ -262,34 +310,58 @@ def train_net(X, y, dims):
     N = X.shape[0]
     print('N=' + str(N))
 
+    iterations = 50000
+
+    loss_t = np.zeros(iterations)
+
     # fit the parameters by repeating forward -> backprop (gradient descent)
     # TODO plot loss over time
-    while True:
+    #while True:
+    
+    t = 0
+        
+    while t < iterations:
+
         # forward prop for our estimate
         y_est, S, G = eval_net(W, X, ret_intermediate=True, add_ones=False)
         L = loss(y, y_est)
+
+        loss_t[t] = L
 
         # weights adjusted in place
         # TODO verify that this is the case
         backprop(W, X, y, y_est, S, G, rate)
 
-        if verbose:
-            print('loss=' + str(L))
-            print('accuracy=' + str(accuracy(y_est, y)))
+        #if verbose:
+        print('t=' + str(t))
+        print('loss=' + str(L))
+        print('accuracy=' + str(accuracy(y_est, y)))
 
-        # TODO break on a certain # of iterations
+        '''
         if np.isnan(L) or np.isclose(last_loss, L):
             break
         last_loss = L
+        '''
+        
+        t = t + 1
 
-    return W
+    return W, loss_t
 
 def accuracy(y_est, y):
     # abstracts away some of the sign convention stuff
+
+    # TODO y_est shape a problem somewhere else? loss?
+
     if np.any(y == -1):
         return np.sum(np.sign(y_est) == y) / np.size(y)
     else:
-        return np.sum(np.round(y_est) == y) / np.size(y)
+        if y_est.shape == y.shape:
+            return np.sum(np.round(y_est) == y) / np.size(y)
+        elif y.transpose().shape == y_est.shape:
+            return np.sum(np.round(y_est) == y.transpose()) / np.size(y)
+        else:
+            assert False
+
 
 '''
 Problem 1

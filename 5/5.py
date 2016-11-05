@@ -24,35 +24,43 @@ def show_or_save(name):
     else:
         plt.close()
 
-def map_decisions(W, X, y, prob):
-    fig = plt.figure()
+def plot_classes(X, y, problem):
+    plt.figure()
 
     if X.shape[0] == y.shape[0]:
         X_c0 = X[(y == 0).flatten(), :]
         X_c1 = X[(y == 1).flatten(), :]
 
-        plt.scatter(X_c0[:,0], X_c0[:,1], c='r')
-        plt.scatter(X_c1[:,0], X_c1[:,1],  c='b')
+        c0 = plt.scatter(X_c0[:,0], X_c0[:,1], c='r')
+        c1 = plt.scatter(X_c1[:,0], X_c1[:,1],  c='b')
     else:
         X_c0 = X[:, (y == 0).flatten()]
         X_c1 = X[:, (y == 1).flatten()]
 
-        plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
-        plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
+        c0 = plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
+        c1 = plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
 
-    plt.title('Classes for dataset 1')
-    # TODO
-    plt.legend()
+    plt.title('Classes for dataset ' + problem)
+    plt.legend([c0, c1], ['Class 0', 'Class 1'])
+    plt.show()
 
-    # plot decision boundary
     ax = plt.gca()
-    prev_x = ax.get_xlim()
-    prev_y = ax.get_ylim()
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
 
+    return xlim, ylim
+
+def map_decisions(W, X, y, xlim, ylim, problem):
+    plt.figure()
+
+    # TODO default x,y_range
+    
+    # plot decision boundary
     samples = 200
-    x = np.linspace(prev_x[0], prev_x[1], samples)
-    y = np.linspace(prev_y[0], prev_y[1], samples)
+    x = np.linspace(xlim[0], xlim[1], samples)
+    y = np.linspace(ylim[0], ylim[1], samples)
 
+    # TODO remove
     printed = False
 
     d = np.zeros((samples, samples))
@@ -61,17 +69,14 @@ def map_decisions(W, X, y, prob):
             #if not printed:
             #    print(np.array([[1], [xx], [yy]]).shape)
             #    printed = True
-#            print(eval_net(W, np.array([[1], [xx], [yy]]), addones=False))
+#           print(eval_net(W, np.array([[1], [xx], [yy]]), addones=False))
             d[xx,yy] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
     #plt.contour(x, y, d)
     #plt.show()
 
-    # TODO where is empty fig coming from?
-
-    plt.figure()
     plt.matshow(d, cmap=plt.cm.viridis)
-    plt.title('Decision boundary for model in problem ' + prob)
+    plt.title('Decision boundary for model in problem ' + problem)
     plt.show()
 
     return d
@@ -150,7 +155,6 @@ def backprop(W, X, y, y_est, S, G, rate):
     Uses the backpropagation algorithm to adjust the weights in place 
     by gradient descent.
     '''
-    #print('backprop')
 
     # dL/dw^l_{ij} = (dL/ds^l_j)(ds^l_j/dw^l_{ij})
     # ds^l_j/dw^l_{ij} = g^{l-1}_i, where g^l(x) = logistic((w^l)^T g^{l-1})
@@ -159,7 +163,6 @@ def backprop(W, X, y, y_est, S, G, rate):
     # for the last layer; the base case
     # L in superscript is the last layer, otherwise L = Loss
     delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
-    print(delta.shape)
 
     # now recursively, for the other layers
     l = len(W) - 1
@@ -184,38 +187,13 @@ def backprop(W, X, y, y_est, S, G, rate):
         # actually propagate back one layer
         # i.e. use the delta from the previous layer
         # to calculate the delta for the current layer
-        sum_term = np.zeros((W[l].shape[0], y.shape[0]))
-
-        # TODO vectorize
-        print(W[l].shape)
-        print(delta.shape)
-        #sum_term = np.dot(W[l], delta.reshape((delta.shape)))
-        sum_teerm = np.dot(W[l], delta)
-        print(sum_teerm.shape)
-
-
-        '''
-        # shape[1] should be the number of units 'in' layer l (the output of)
-        print(W[l].shape[1])
-        for j in range(0, W[l].shape[1]):
-            print('for')
-            sum_term = sum_term + np.outer(delta[j], W[l][:,j]).transpose()
-            print(delta[j].shape)
-            print(W[l][:,j].shape)
-            print(np.outer(delta[j], W[l][:,j]).transpose().shape)
-            print('endfor')
-            print(sum_term.shape)
-
-        assert sum_term.shape == sum_teerm.shape
-        '''
+        sum_term = np.dot(W[l], delta)
 
         # delta for layer l-1
         delta = d_logistic(S[l-1]) * sum_term
-        print(delta.shape)
 
         # now move one layer closer to the input
         l = l - 1
-        #break
     
     return None
 
@@ -273,7 +251,6 @@ def train_net(X, y, dims, iterations):
         loss_t[t] = L
 
         # weights adjusted in place
-        # TODO verify that this is the case
         backprop(W, X, y, y_est, S, G, rate)
 
         #if verbose:
@@ -284,9 +261,6 @@ def train_net(X, y, dims, iterations):
         '''
 
         t = t + 1
-
-        # TODO remove
-        #break
 
     return W, loss_t
 
@@ -317,8 +291,6 @@ ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
 
-"""
-
 # doesnt count input (data) or output layer
 # because those are determined by dimensions of X and y
 dims = [5, 5]
@@ -336,7 +308,10 @@ y_est_ts = eval_net(W, Xts)
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-mf, xx, yy = map_decisions(W, Xtr, ytr, '1.1')
+# scatter plot to compare all decision heatmaps against
+xlim, ylim = plot_classes(Xtr, ytr, '1')
+
+d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.1')
 
 print('1.2')
 plt.figure()
@@ -356,15 +331,12 @@ y_est_ts = eval_net(W, Xts)
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-mf, xx, yy = map_decisions(W, Xtr, ytr, '1.2')
-
-"""
+d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
 
 print('1.4')
 plt.figure()
 
 dims = [4, 3]
-#W, loss_t = train_net(Xtr, ytr, dims, 100000)
 W, loss_t = train_net(Xtr, ytr, dims, 100000)
 
 print(Xtr.shape)
@@ -383,7 +355,7 @@ y_est_ts = eval_net(W, Xts)
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-d = map_decisions(W, Xtr, ytr, '1.4')
+d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 
 """
 Problem 2

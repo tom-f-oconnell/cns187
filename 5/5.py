@@ -24,7 +24,7 @@ def show_or_save(name):
     else:
         plt.close()
 
-def plot_by_class(X, y):
+def map_decisions(W, X, y):
     fig = plt.figure()
 
     if X.shape[0] == y.shape[0]:
@@ -40,7 +40,36 @@ def plot_by_class(X, y):
         plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
         plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
 
-    return fig
+    # plot decision boundary
+    ax = plt.gca()
+    prev_x = ax.get_xlim()
+    prev_y = ax.get_ylim()
+
+    samples = 200
+    x = np.linspace(prev_x[0], prev_x[1], samples)
+    y = np.linspace(prev_y[0], prev_y[1], samples)
+    '''
+    xx, yy = np.meshgrid(x, y)
+
+    #d = np.round(1 / (1 + np.exp(W[0,0] + W[0,1]*xx + W[0,2]*yy + \
+    #        W[0,3]*xx*yy + W[0,4]*(xx**2) + W[0,5]*(yy**2))))
+    print([xx,yy])
+    print(xx.shape)
+    print(yy.shape)
+
+    xy = np.concatenate((xx,yy), axis=0)
+    '''
+
+    d = np.zeros((samples, samples))
+    for xx in x:
+        for yy in y:
+            # TODO dimension
+            d[xx,yy] = eval_net(W, np.array([1, xx, yy]), addones=False)
+
+    plt.contour(x, y, d, 1, colors='g')
+    plt.show()
+
+    return fig, xx, yy
 
 def logistic(W, X):
     # TODO why the final transpose? fix?
@@ -68,7 +97,7 @@ def add_ones(X):
     #return np.concatenate((np.ones((X.shape[0], 1)), X), axis=1)
     return np.concatenate((ones, X), axis=0)
 
-def eval_net(W, X, ret_intermediate=False, add_ones=True):
+def eval_net(W, X, ret_intermediate=False, addones=True):
     # TODO check all indexing
     '''
     Evaluate a matrix of input (example #, feature #) with weights matrix W defining
@@ -78,7 +107,7 @@ def eval_net(W, X, ret_intermediate=False, add_ones=True):
     '''
 
     # add the column of ones for the bias weights
-    if add_ones:
+    if addones:
         X = add_ones(X)
 
     # treat the data as the activations of a 0th layer of the network
@@ -89,14 +118,6 @@ def eval_net(W, X, ret_intermediate=False, add_ones=True):
     G = []
 
     for l in range(0, len(W)):
-        # TODO check output dimensions
-
-        '''
-        print(l)
-        print(W[l].transpose().shape)
-        print(g.shape)
-        '''
-
         # calculate linear input to units in layer `l`
         S_l = np.dot(W[l].transpose(), g)
         
@@ -323,7 +344,7 @@ def train_net(X, y, dims):
     while t < iterations:
 
         # forward prop for our estimate
-        y_est, S, G = eval_net(W, X, ret_intermediate=True, add_ones=False)
+        y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
         L = loss(y, y_est)
 
         loss_t[t] = L
@@ -350,8 +371,6 @@ def train_net(X, y, dims):
 def accuracy(y_est, y):
     # abstracts away some of the sign convention stuff
 
-    # TODO y_est shape a problem somewhere else? loss?
-
     if np.any(y == -1):
         return np.sum(np.sign(y_est) == y) / np.size(y)
     else:
@@ -376,110 +395,62 @@ ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
 
-print(add_ones(Xtr).shape)
-
 # doesnt count input (data) or output layer
 # because those are determined by dimensions of X and y
 dims = [5, 5]
-W = train_net(Xtr, ytr, dims)
+W, loss_t = train_net(Xtr, ytr, dims)
 
-"""
-print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
-print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
+plt.plot(loss_t)
+plt.title('Loss over time for 1.1')
+plt.xlabel('Iteration number')
+plt.ylabel('Squared error loss function')
+plt.show()
 
-plot_by_class(Xtr, ytr)
-plt.title('Logistic regression for linearly separable data')
+y_est = eval_net(W, Xtr)
+y_est_ts = eval_net(W, Xts)
 
-# evaluates the decision boundary at x2 to find the corresponding x1
-bound_x2y = lambda x2: (-W[0,0] - W[0,2]*x2) / W[0,1]
-bound_y2x = lambda x1: (-W[0,0] - W[0,1]*x1) / W[0,2]
+print('Training set accuracy=' + str(accuracy(y_est, ytr)))
+print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-# now plot the learned decision boundary
-# decision boundary: x1 = (-w0 - w2*x2) / w1
-ax = plt.gca()
-prev_x = ax.get_xlim()
-prev_y = ax.get_ylim()
-x = prev_x[0]
-y = prev_y[0]
-p_0 = (x, bound_x2y(x))
-p_1 = (bound_y2x(y), y)
+mf, xx, yy = map_decisions(W, Xtr, ytr)
 
-plt.plot(p_0, p_1, 'g-')
-ax.set_xlim(prev_x)
-ax.set_ylim(prev_y)
+print('1.2')
+plt.figure()
 
-show_or_save('fig2.3a')
+dims = [2]
+W, loss_t = train_net(Xtr, ytr, dims)
 
-C = scipy.io.loadmat('datasetC.mat')
-Xtr = C['Xtr'].transpose()
-ytr = C['ytr']
-Xts = C['Xts'].transpose()
-yts = C['yts']
+plt.plot(loss_t)
+plt.title('Loss over time for 1.1')
+plt.xlabel('Iteration number')
+plt.ylabel('Squared error loss function')
+plt.show()
 
-print('')
-print('2.3.b')
-print('Training directly on non-linearly separable dataset')
-W = logistic_regression(Xtr, ytr)
+y_est = eval_net(W, Xtr)
+y_est_ts = eval_net(W, Xts)
 
-print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
-print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
+print('Training set accuracy=' + str(accuracy(y_est, ytr)))
+print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-plot_by_class(Xtr, ytr)
+mf, xx, yy = map_decisions(W, Xtr, ytr)
 
-ax = plt.gca()
-prev_x = ax.get_xlim()
-prev_y = ax.get_ylim()
+print('1.4')
+plt.figure()
 
-x_1 = -3
-x_2 = 3
+dims = [5, 2]
+W, loss_t = train_net(Xtr, ytr, dims)
 
-# evaluates the decision boundary at x2 to find the corresponding x1
-bound_x2y = lambda x2: (-W[0,0] - W[0,2]*x2) / W[0,1]
-bound_y2x = lambda x1: (-W[0,0] - W[0,1]*x1) / W[0,2]
+plt.plot(loss_t)
+plt.title('Loss over time for 1.1')
+plt.xlabel('Iteration number')
+plt.ylabel('Squared error loss function')
+plt.show()
 
-p_0 = (x_1, bound_x2y(x_1))
-p_1 = (x_2, bound_x2y(x_2))
+y_est = eval_net(W, Xtr)
+y_est_ts = eval_net(W, Xts)
 
-#?
-plt.plot([p_0[1], p_1[1]], [p_0[0], p_1[0]] , 'g-')
+print('Training set accuracy=' + str(accuracy(y_est, ytr)))
+print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-ax.set_xlim(prev_x)
-ax.set_ylim(prev_y)
+f, xx, yy = map_decisions(W, Xtr, ytr)
 
-plt.title('Logistic regression with non-linearly separable data')
-
-show_or_save('fig2.3b')
-
-print('')
-print('2.3.c')
-print('Training on non-linearly separable dataset with expanded features')
-
-Xtr = np.array([Xtr[:,0], Xtr[:,1], Xtr[:,0] * Xtr[:,1], \
-        Xtr[:,0] * Xtr[:,0], Xtr[:,1] * Xtr[:,1]]).transpose()
-Xts = np.array([Xts[:,0], Xts[:,1], Xts[:,0] * Xts[:,1], \
-        Xts[:,0] * Xts[:,0], Xts[:,1] * Xts[:,1]]).transpose()
-
-W = logistic_regression(Xtr, ytr)
-
-print('Training set accuracy=' + str(accuracy(logistic(W, Xtr), ytr)))
-print('Testing set accuracy=' + str(accuracy(logistic(W, Xts), yts)))
-
-plot_by_class(Xtr, ytr)
-plt.title('Logistic regression with expanded features for nonlinear data')
-
-# plot decision boundary
-ax = plt.gca()
-prev_x = ax.get_xlim()
-prev_y = ax.get_ylim()
-
-samples = 200
-x = np.linspace(prev_x[0], prev_x[1], samples)
-y = np.linspace(prev_y[0], prev_y[1], samples)
-xx, yy = np.meshgrid(x, y)
-d = np.round(1 / (1 + np.exp(W[0,0] + W[0,1]*xx + W[0,2]*yy + \
-        W[0,3]*xx*yy + W[0,4]*(xx**2) + W[0,5]*(yy**2))))
-
-plt.contour(x, y, d, 1, colors='g')
-
-show_or_save('fig2.3c')
-"""

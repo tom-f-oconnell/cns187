@@ -58,9 +58,9 @@ def map_decisions(W, X, y, prob):
     d = np.zeros((samples, samples))
     for xx in x:
         for yy in y:
-            if not printed:
-                print(np.array([[1], [xx], [yy]]).shape)
-                printed = True
+            #if not printed:
+            #    print(np.array([[1], [xx], [yy]]).shape)
+            #    printed = True
 #            print(eval_net(W, np.array([[1], [xx], [yy]]), addones=False))
             d[xx,yy] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
@@ -159,6 +159,7 @@ def backprop(W, X, y, y_est, S, G, rate):
     # for the last layer; the base case
     # L in superscript is the last layer, otherwise L = Loss
     delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+    print(delta.shape)
 
     # now recursively, for the other layers
     l = len(W) - 1
@@ -186,15 +187,35 @@ def backprop(W, X, y, y_est, S, G, rate):
         sum_term = np.zeros((W[l].shape[0], y.shape[0]))
 
         # TODO vectorize
+        print(W[l].shape)
+        print(delta.shape)
+        #sum_term = np.dot(W[l], delta.reshape((delta.shape)))
+        sum_teerm = np.dot(W[l], delta)
+        print(sum_teerm.shape)
+
+
+        '''
         # shape[1] should be the number of units 'in' layer l (the output of)
+        print(W[l].shape[1])
         for j in range(0, W[l].shape[1]):
+            print('for')
             sum_term = sum_term + np.outer(delta[j], W[l][:,j]).transpose()
+            print(delta[j].shape)
+            print(W[l][:,j].shape)
+            print(np.outer(delta[j], W[l][:,j]).transpose().shape)
+            print('endfor')
+            print(sum_term.shape)
+
+        assert sum_term.shape == sum_teerm.shape
+        '''
 
         # delta for layer l-1
         delta = d_logistic(S[l-1]) * sum_term
+        print(delta.shape)
 
         # now move one layer closer to the input
         l = l - 1
+        #break
     
     return None
 
@@ -263,6 +284,9 @@ def train_net(X, y, dims, iterations):
         '''
 
         t = t + 1
+
+        # TODO remove
+        #break
 
     return W, loss_t
 
@@ -351,6 +375,8 @@ plt.xlabel('Iteration number')
 plt.ylabel('Squared error loss function')
 plt.show()
 
+print(len(W))
+print(Xtr.shape)
 y_est = eval_net(W, Xtr)
 y_est_ts = eval_net(W, Xts)
 

@@ -6,6 +6,8 @@ import seaborn as sns
 import scipy.io
 
 sns.set()
+# perhaps redundant
+sns.set_style('dark')
 
 should_plot = True
 save_figs = False
@@ -51,32 +53,44 @@ def plot_classes(X, y, problem):
     return xlim, ylim
 
 def map_decisions(W, X, y, xlim, ylim, problem):
-    #plt.figure()
 
-    # TODO default x,y_range
-    
     # plot decision boundary
     samples = 200
     x = np.linspace(xlim[0], xlim[1], samples)
     y = np.linspace(ylim[0], ylim[1], samples)
 
-    # TODO remove
-    printed = False
+    d = np.empty((samples, samples)) * np.nan
+    for i, xx in enumerate(x):
+        for j, yy in enumerate(y):
+            d[i,j] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
-    d = np.zeros((samples, samples))
-    for xx in x:
-        for yy in y:
-            #if not printed:
-            #    print(np.array([[1], [xx], [yy]]).shape)
-            #    printed = True
-#           print(eval_net(W, np.array([[1], [xx], [yy]]), addones=False))
-            d[xx,yy] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
-
+    #plt.figure()
     #plt.contour(x, y, d)
+
+    #plt.matshow(d, cmap=plt.cm.viridis, extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+    plt.matshow(d, extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+
+    plt.title('Decision boundary for model in problem ' + problem)
+    plt.colorbar()
     #plt.show()
 
-    plt.matshow(d, cmap=plt.cm.viridis)
-    plt.title('Decision boundary for model in problem ' + problem)
+    '''
+    if X.shape[0] == y.shape[0]:
+        X_c0 = X[(y == 0).flatten(), :]
+        X_c1 = X[(y == 1).flatten(), :]
+
+        c0 = plt.scatter(X_c0[:,0], X_c0[:,1], c='r')
+        c1 = plt.scatter(X_c1[:,0], X_c1[:,1],  c='b')
+    else:
+        X_c0 = X[:, (y == 0).flatten()]
+        X_c1 = X[:, (y == 1).flatten()]
+    '''
+
+    c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
+    c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
+
+    plt.legend([c0, c1], ['Class 0', 'Class 1'])
+
     plt.show()
 
     return d
@@ -253,15 +267,14 @@ def train_net(X, y, dims, iterations):
         # weights adjusted in place
         backprop(W, X, y, y_est, S, G, rate)
 
-        #if verbose:
-        '''
-        print('t=' + str(t))
-        print('loss=' + str(L))
-        print('accuracy=' + str(accuracy(y_est, y)))
-        '''
-
         t = t + 1
 
+        if t % (iterations / 100) == 0:
+            print('t=' + str(t))
+            print('loss=' + str(L))
+            print('accuracy=' + str(accuracy(y_est, y)))
+
+    y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
     return W, loss_t, y_est
 
 def accuracy(y_est, y):
@@ -342,6 +355,9 @@ print('1.4')
 plt.figure()
 
 dims = [4, 3]
+# TODO training for 10^6 iterations eventually leads to oscillations 
+# around 32-33 loss. why?
+# in loss or actually just in accuracy? should cost func explicitly model the latter?
 W, loss_t, y_eest = train_net(Xtr, ytr, dims, 100000)
 
 print(Xtr.shape)
@@ -354,9 +370,12 @@ plt.show()
 
 print(len(W))
 print(Xtr.shape)
+
+# TODO why are these values different from values returned from training?
 y_est = eval_net(W, Xtr)
 y_est_ts = eval_net(W, Xts)
 
+# TODO is testing always better than train??? it was this time... by 2.4% points as well
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 

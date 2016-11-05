@@ -103,9 +103,9 @@ This line is not the only solution that could correctly separate data generated 
       \end{tabular}
   \end{center}
 
-At this point, however, my perceptron, trained with the algorithm described above, has not yet 
-converged.  Circularly looping through the data, it takes $9$ iterations before the training 
-converges, and after then the weights never change on any future iterations.
+My perceptron, trained with the algorithm described above, has not yet 
+converged at this point.  Circularly looping through the data, it takes $9$ iterations before 
+the training converges, and after then the weights never change on any future iterations.
 
 \paragraph{3)}
 
@@ -148,20 +148,18 @@ The expression for the loss function $\mathcal{L}$ for a single training example
 The loss function over all training examples is a sum of the above, normalized by the number of 
 training examples.
 
-\paragraph{2)} Derive the gradient of the loss function with respect to the weights.
+\paragraph{2)} Derive the gradient of the loss function with respect to the weights.\\
 
-The gradient of the loss function with respect to the weights if the sum of the loss on one example 
-over all the training examples.
+The gradient of the loss function with respect to the weights, on one training example, is:
 
-\[ \frac{\partial \mathcal{L}}{\partial w} = \frac{1}{1 + e^{-y\theta(x)}} -\frac{\partial \theta(x)}
-{\partial w} \]
+\[ \frac{\partial \mathcal{L}}{\partial w} = \frac{1}{1 + e^{-y\theta(x)}}(-ye^{-y\theta(x)})
+    \frac{\partial\theta(x)}{\partial w} \]
 
 Where for each $i$,
 
-% TODO wrong i think. doesn't lead to next step.
 \[ \frac{\partial\theta(x)}{\partial w_i} = x_i \]
 
-\[ \frac{\partial \mathcal{L}}{\partial w} = \frac{yx}{1 + e^{y\theta(x)}} \]
+\[ \frac{\partial \mathcal{L}}{\partial w} = \frac{-yx}{1 + e^{y\theta(x)}} \]
 
 Since the gradient is linear with respect to summation, the gradient over all training examples is just the sum of the individuals.
 

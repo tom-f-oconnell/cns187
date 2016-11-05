@@ -42,16 +42,16 @@ def plot_classes(X, y, problem):
 
     plt.title('Classes for dataset ' + problem)
     plt.legend([c0, c1], ['Class 0', 'Class 1'])
-    plt.show()
 
     ax = plt.gca()
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 
+    plt.show()
     return xlim, ylim
 
 def map_decisions(W, X, y, xlim, ylim, problem):
-    plt.figure()
+    #plt.figure()
 
     # TODO default x,y_range
     
@@ -262,7 +262,7 @@ def train_net(X, y, dims, iterations):
 
         t = t + 1
 
-    return W, loss_t
+    return W, loss_t, y_est
 
 def accuracy(y_est, y):
     # abstracts away some of the sign convention stuff
@@ -277,11 +277,9 @@ def accuracy(y_est, y):
         else:
             assert False
 
-
 '''
 Problem 1
 '''
-print('1.1')
 
 Data = scipy.io.loadmat('dataset.mat')
 
@@ -291,10 +289,13 @@ ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
 
+"""
+print('1.1')
+
 # doesnt count input (data) or output layer
 # because those are determined by dimensions of X and y
 dims = [5, 5]
-W, loss_t = train_net(Xtr, ytr, dims, 50000)
+W, loss_t, y_eest = train_net(Xtr, ytr, dims, 50000)
 
 plt.plot(loss_t)
 plt.title('Loss over time for 1.1')
@@ -303,13 +304,14 @@ plt.ylabel('Squared error loss function')
 plt.show()
 
 y_est = eval_net(W, Xtr)
+
+# TODO remove
+# assert np.allclose(y_eest, y_est, rtol=0.01, atol=0.02)
+
 y_est_ts = eval_net(W, Xts)
 
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
-
-# scatter plot to compare all decision heatmaps against
-xlim, ylim = plot_classes(Xtr, ytr, '1')
 
 d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.1')
 
@@ -317,7 +319,7 @@ print('1.2')
 plt.figure()
 
 dims = [2]
-W, loss_t = train_net(Xtr, ytr, dims, 50000)
+W, loss_t, y_eest = train_net(Xtr, ytr, dims, 50000)
 
 plt.plot(loss_t)
 plt.title('Loss over time for 1.2')
@@ -332,12 +334,15 @@ print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
 d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
+"""
+# scatter plot to compare all decision heatmaps against
+xlim, ylim = plot_classes(Xtr, ytr, '1')
 
 print('1.4')
 plt.figure()
 
 dims = [4, 3]
-W, loss_t = train_net(Xtr, ytr, dims, 100000)
+W, loss_t, y_eest = train_net(Xtr, ytr, dims, 100000)
 
 print(Xtr.shape)
 
@@ -360,7 +365,7 @@ d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 """
 Problem 2
 """
-
+'''
 Train = scipy.io.loadmat('mnist_train.mat')
 Test = scipy.io.loadmat('mnist_test.mat')
 
@@ -369,3 +374,4 @@ Xtr = Train['data']
 ytr = Train['labels']
 Xts = Test['data']
 yts = Test['labels']
+'''

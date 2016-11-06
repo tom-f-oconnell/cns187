@@ -144,6 +144,8 @@ def loss(y, y_est):
     elif y_est.shape == y.transpose().shape:
         return np.sum(np.square(y_est - y.transpose()))
     else:
+        print(y.shape)
+        print(y_est.shape)
         # TODO raise appropriate exception instead
         assert False
 
@@ -159,6 +161,16 @@ def expand_images(X):
 
     return X_ex
 
+def shuffle_data(X):
+    """
+    Randomly re-order datapoints.
+    """
+    # MNIST data might have already been shuffled though
+
+    X_rand = X[:, np.random.randint(0,X.shape[1])]
+    return X_rand
+
+
 def one_hot_encoding(y):
     """
     Change y to a {0/1}^d representation as opposed to integers on [0,d]
@@ -173,7 +185,7 @@ def one_hot_encoding(y):
     return y_oh
 
     
-def backprop(W, X, y, y_est, S, G, rate, sgd=False):
+def backprop(W, X, y, y_est, S, G, rate):
     '''
     Uses the backpropagation algorithm to adjust the weights in place 
     by gradient descent.
@@ -186,125 +198,92 @@ def backprop(W, X, y, y_est, S, G, rate, sgd=False):
     # for the last layer; the base case
     # L in superscript is the last layer, otherwise L = Loss
 
-    if not sgd:
-        delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+    delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+
+    '''
+    print('delta before loop')
+    tmp = delta
+    print(tmp.mean())
+    print(tmp.var())
+    print(np.sum(np.square(tmp))) 
+    print('')
+
+    # these were the (~0) terms
+    print(S[-1].mean())
+    print(S[-1].var())
+    print(d_logistic(S[-1]).mean())
+    print(d_logistic(S[-1]).var())
+    print((y_est - y.transpose()).mean())
+    print((y_est - y.transpose()).var())
+
+    print('')
+    '''
+
+    # now recursively, for the other layers
+    l = len(W) - 1
+    while l > 0:
+        # to make sure the dimensions don't change
+        # dims = [w.shape for w in W]
+
+        # update the weights of the current layer
+        # uses the same formula as the last layer does (could collapse)
+        # what would happen if you had different learning rates for different layers?
+        # work on this?
+        
+        # this actually does fail
+        #assert np.allclose(rate * np.dot(G[l-1], delta.transpose()), np.zeros(W[l].shape))
+
+        # TODO these quickly all go to zero (after 1 or 2 iteration)
+        # (not with learning rate ~0.001 though)
+        '''
+        print('weight update')
+        tmp = rate * np.dot(G[l-1], delta.transpose())
+        print(tmp.mean())
+        print(tmp.var())
+        print(np.sum(np.square(tmp))) 
+        print('')
+        '''
+
+        W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
+
+        ''' they haven't been ''
+        # the weights matrices should not have changed dimensions
+        for w, d in zip(W, dims):
+            try:
+                assert w.shape == d
+            except AssertionError:
+                print(str(w.shape) + ' differed from previous ' + str(d))
+                assert False
+        '''
+
+        # actually propagate back one layer
+        # i.e. use the delta from the previous layer
+        # to calculate the delta for the current layer
+        sum_term = np.dot(W[l], delta)
 
         '''
-        print('delta before loop')
+        print('sum_term')
+        tmp = sum_term
+        print(tmp.mean())
+        print(tmp.var())
+        print(np.sum(np.square(tmp))) 
+        print('')
+        '''
+
+        # delta for layer l-1
+        delta = d_logistic(S[l-1]) * sum_term
+        
+        '''
+        print('delta')
         tmp = delta
         print(tmp.mean())
         print(tmp.var())
         print(np.sum(np.square(tmp))) 
         print('')
-
-        # these were the (~0) terms
-        print(S[-1].mean())
-        print(S[-1].var())
-        print(d_logistic(S[-1]).mean())
-        print(d_logistic(S[-1]).var())
-        print((y_est - y.transpose()).mean())
-        print((y_est - y.transpose()).var())
-
-        print('')
         '''
 
-        # now recursively, for the other layers
-        l = len(W) - 1
-        while l > 0:
-            # to make sure the dimensions don't change
-            # dims = [w.shape for w in W]
-
-            # update the weights of the current layer
-            # uses the same formula as the last layer does (could collapse)
-            # what would happen if you had different learning rates for different layers?
-            # work on this?
-            
-            # this actually does fail
-            #assert np.allclose(rate * np.dot(G[l-1], delta.transpose()), np.zeros(W[l].shape))
-
-            # TODO these quickly all go to zero (after 1 or 2 iteration)
-            # (not with learning rate ~0.001 though)
-            '''
-            print('weight update')
-            tmp = rate * np.dot(G[l-1], delta.transpose())
-            print(tmp.mean())
-            print(tmp.var())
-            print(np.sum(np.square(tmp))) 
-            print('')
-            '''
-
-            W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
-
-            ''' they haven't been ''
-            # the weights matrices should not have changed dimensions
-            for w, d in zip(W, dims):
-                try:
-                    assert w.shape == d
-                except AssertionError:
-                    print(str(w.shape) + ' differed from previous ' + str(d))
-                    assert False
-            '''
-
-            # actually propagate back one layer
-            # i.e. use the delta from the previous layer
-            # to calculate the delta for the current layer
-            sum_term = np.dot(W[l], delta)
-
-            '''
-            print('sum_term')
-            tmp = sum_term
-            print(tmp.mean())
-            print(tmp.var())
-            print(np.sum(np.square(tmp))) 
-            print('')
-            '''
-
-            # delta for layer l-1
-            delta = d_logistic(S[l-1]) * sum_term
-            
-            '''
-            print('delta')
-            tmp = delta
-            print(tmp.mean())
-            print(tmp.var())
-            print(np.sum(np.square(tmp))) 
-            print('')
-            '''
-
-            # now move one layer closer to the input
-            l = l - 1
-    else:
-        '''
-        print(y_est.shape)
-        print(S[-1].shape)
-        print(G[-1].shape)
-        '''
-        # all 10 x 60k
-        for i in range(0, y_est.shape[0]):
-            print(i)
-            delta = 2 * (y_est[:,i] - y.transpose()[:,i]) * d_logistic(S[-1][:,i])
-            l = len(W) - 1
-            while l > 0:
-                # 11x10
-                print(W[l].shape)
-                # 11,
-                print(G[l-1][:,i].shape)
-                # 10,
-                print(delta.transpose().shape)
-                print((rate * np.dot(G[l-1][:,i], delta.transpose())).shape)
-                W[l] = W[l] - (rate * np.dot(G[l-1][:,i], delta.transpose()))
-                delta = d_logistic(S[l-1][:,i]) * np.dot(W[l], delta)
-                l = l - 1
-        '''
-        # so odd that this works but above doesnt
-        for i in range(0, y_est.shape[0]):
-            delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
-            l = len(W) - 1
-            while l > 0:
-                W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
-                delta = d_logistic(S[l-1]) * np.dot(W[l], delta)
-                l = l - 1
-        '''
+        # now move one layer closer to the input
+        l = l - 1
 
 
 def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
@@ -351,21 +330,36 @@ def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
     # fit the parameters by repeating forward -> backprop (gradient descent)
     while t < iterations:
 
-        # forward prop for our estimate
-        y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
-        L = loss(y, y_est)
+        if not sgd:
+            # forward prop for our estimate
+            y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
 
-        loss_t[t] = L
+            # weights adjusted in place
+            backprop(W, X, y, y_est, S, G, rate)
 
-        # weights adjusted in place
-        backprop(W, X, y, y_est, S, G, rate, sgd=sgd)
+            L = loss(y, y_est)
+            loss_t[t] = L
+        else:
+            # TODO for SGD, t will need to exceed 60000 to sample everything even once
+            
+            y_est, S, G = eval_net(W, X[:,(t % X.shape[1])].reshape((X.shape[0],1)) \
+                    , ret_intermediate=True, addones=False)
 
-        t = t + 1
+            backprop(W, X[:,(t % X.shape[1])].reshape((X.shape[0],1)), \
+                    y[(t % X.shape[1]),:].reshape((1,y.shape[1])), y_est, S, G, rate)
 
-        if verbose and t % (iterations / 100) == 0:
+        if verbose and (sgd and t % (iterations / 10) == 0) or \
+                (not sgd and t % (iterations / 100) == 0):
+
+            y_est = eval_net(W, X, ret_intermediate=False, addones=False)
+            L = loss(y, y_est)
+            loss_t[t] = L
+
             print('t=' + str(t))
             print('loss=' + str(L))
             print('accuracy=' + str(accuracy(y_est, y)))
+
+        t = t + 1
 
     y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
     return W, loss_t, y_est
@@ -510,11 +504,11 @@ yts_oh = one_hot_encoding(yts)
 dims = [784, 11]
 
 # default rate was 0.001
-# TODO maybe try SGD?
-# reasons loss might be changing so slowly?
+# numerical problems for small learning rates? + getting "stuck"
 
 # TODO schedule with rate and change back if start oscillating?
-W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 500, rate=0.0001, sgd=True)
+# TODO use batch size parameter instead of just 'sgd' (batch = 1)
+W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1000000, rate=0.001, sgd=True)
 
 y_est = eval_net(W, Xtr_ex)
 y_est_ts = eval_net(W, Xts_ex)

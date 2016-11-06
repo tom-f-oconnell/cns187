@@ -30,21 +30,6 @@ def show_or_save(name):
 def plot_classes(X, y, problem):
     plt.figure()
 
-    '''
-    if X.shape[0] == y.shape[0]:
-        X_c0 = X[(y == 0).flatten(), :]
-        X_c1 = X[(y == 1).flatten(), :]
-
-        c0 = plt.scatter(X_c0[:,0], X_c0[:,1], c='r')
-        c1 = plt.scatter(X_c1[:,0], X_c1[:,1],  c='b')
-    else:
-        X_c0 = X[:, (y == 0).flatten()]
-        X_c1 = X[:, (y == 1).flatten()]
-
-        c0 = plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
-        c1 = plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
-    '''
-
     c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
     c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
 
@@ -65,36 +50,24 @@ def map_decisions(W, X, y, xlim, ylim, problem):
     x = np.linspace(xlim[0], xlim[1], samples)
     y = np.linspace(ylim[0], ylim[1], samples)
 
-    # these don't seem inverted or anything
-    #print(xlim)
-    #print(ylim)
-
     d = np.empty((samples, samples)) * np.nan
     for i, xx in enumerate(x):
         for j, yy in enumerate(y):
             d[i,j] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
-    # plt.figure()
-    # same problem with contour hiding the scatter plot as matploblib did
-    # plt.contour(x, y, d)
-
     #plt.matshow(d, cmap=plt.cm.viridis, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
-    plt.matshow(d, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
+    plt.matshow(d, alpha=0.5, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
     plt.colorbar()
-
-    # will this fix it?
-    # no
-    #time.sleep(3)
 
     plt.title('Decision boundary for model in problem ' + problem)
 
     # TODO why are these always hidden by matshow?
-    #c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
-    #c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
-
-    # not even the legend shows up in this case
-    c0 = plt.plot(X[0,(y==0).flatten()], X[1,(y==0).flatten()], 'r.')
-    c1 = plt.plot(X[0,(y==1).flatten()], X[1,(y==1).flatten()], 'b.')
+    c0 = plt.scatter(X[0,np.where(y==0)], X[1,np.where(y==0)], c='r')
+    c1 = plt.scatter(X[0,np.where(y==1)], X[1,np.where(y==1)],  c='b')
+    '''
+    c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
+    c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
+    '''
 
     plt.legend([c0, c1], ['Class 0', 'Class 1'])
 
@@ -319,6 +292,7 @@ xlim, ylim = plot_classes(Xtr, ytr, '1')
 dims = [5, 5]
 W, loss_t, y_eest = train_net(Xtr, ytr, dims, 50000)
 
+plt.figure()
 plt.plot(loss_t)
 plt.title('Loss over time for 1.1')
 plt.xlabel('Iteration number')
@@ -360,14 +334,14 @@ d2 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
 '''
 
 print('1.4')
-plt.figure()
 
-dims = [20, 2]
+dims = [50]
 # TODO training for 10^6 iterations eventually leads to oscillations 
 # around 32-33 loss. why?
 # in loss or actually just in accuracy? should cost func explicitly model the latter?
-W, loss_t, _ = train_net(Xtr, ytr, dims, 90000)
+W, loss_t, _ = train_net(Xtr, ytr, dims, 80000)
 
+plt.figure()
 plt.plot(loss_t)
 plt.title('Loss over time for 1.4')
 plt.xlabel('Iteration number')

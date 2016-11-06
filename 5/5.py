@@ -55,21 +55,22 @@ def map_decisions(W, X, y, xlim, ylim, problem):
         for j, yy in enumerate(y):
             d[i,j] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
+    # not working here either. sigh.
+    #c0 = plt.scatter(X[0,np.where(y==0)], X[1,np.where(y==0)], c='r')
+    #c1 = plt.scatter(X[0,np.where(y==1)], X[1,np.where(y==1)],  c='b')
+
     #plt.matshow(d, cmap=plt.cm.viridis, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
-    plt.matshow(d, alpha=0.5, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
+    plt.matshow(d, alpha=1, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
     plt.colorbar()
 
     plt.title('Decision boundary for model in problem ' + problem)
 
-    # TODO why are these always hidden by matshow?
-    c0 = plt.scatter(X[0,np.where(y==0)], X[1,np.where(y==0)], c='r')
-    c1 = plt.scatter(X[0,np.where(y==1)], X[1,np.where(y==1)],  c='b')
     '''
     c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
     c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
     '''
 
-    plt.legend([c0, c1], ['Class 0', 'Class 1'])
+    #plt.legend([c0, c1], ['Class 0', 'Class 1'])
 
     plt.show()
 
@@ -143,6 +144,20 @@ def loss(y, y_est):
         return np.sum(np.square(y_est - y.transpose()))
     else:
         assert False
+
+def one_hot_encoding(y):
+    """
+    Change y to a {0/1}^d representation as opposed to integers on [0,d]
+    """
+
+    y_oh = np.zeros((y.shape[0], y.max() - y.min() + 1))
+
+    # currently only works in min is actually 0
+    for j in range(0, y_oh.shape[1]):
+        y_oh[np.where(y == j), j] = 1
+
+    return y_oh
+
     
 def backprop(W, X, y, y_est, S, G, rate):
     '''
@@ -361,7 +376,6 @@ d4 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 """
 Problem 2
 """
-'''
 Train = scipy.io.loadmat('mnist_train.mat')
 Test = scipy.io.loadmat('mnist_test.mat')
 
@@ -371,7 +385,10 @@ ytr = Train['labels']
 Xts = Test['data']
 yts = Test['labels']
 
+# recode the output as vectors of 0 and 1
+ytr_oh = one_hot_encoding(ytr)
+yts_oh = one_hot_encoding(yts)
+
 dims = [5, 5]
 
-W, loss_t, _ = train_net(Xtr, ytr, dims, 50000)
-'''
+W, loss_t, _ = train_net(Xtr, ytr_oh, dims, 50000)

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.io
+import time
 
 sns.set()
 # perhaps redundant
@@ -29,6 +30,7 @@ def show_or_save(name):
 def plot_classes(X, y, problem):
     plt.figure()
 
+    '''
     if X.shape[0] == y.shape[0]:
         X_c0 = X[(y == 0).flatten(), :]
         X_c1 = X[(y == 1).flatten(), :]
@@ -41,6 +43,10 @@ def plot_classes(X, y, problem):
 
         c0 = plt.scatter(X_c0[0,:], X_c0[1,:], c='r')
         c1 = plt.scatter(X_c1[0,:], X_c1[1,:],  c='b')
+    '''
+
+    c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
+    c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
 
     plt.title('Classes for dataset ' + problem)
     plt.legend([c0, c1], ['Class 0', 'Class 1'])
@@ -59,35 +65,36 @@ def map_decisions(W, X, y, xlim, ylim, problem):
     x = np.linspace(xlim[0], xlim[1], samples)
     y = np.linspace(ylim[0], ylim[1], samples)
 
+    # these don't seem inverted or anything
+    #print(xlim)
+    #print(ylim)
+
     d = np.empty((samples, samples)) * np.nan
     for i, xx in enumerate(x):
         for j, yy in enumerate(y):
             d[i,j] = eval_net(W, np.array([[1], [xx], [yy]]), addones=False)
 
-    #plt.figure()
-    #plt.contour(x, y, d)
+    # plt.figure()
+    # same problem with contour hiding the scatter plot as matploblib did
+    # plt.contour(x, y, d)
 
-    #plt.matshow(d, cmap=plt.cm.viridis, extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
-    plt.matshow(d, extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+    #plt.matshow(d, cmap=plt.cm.viridis, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
+    plt.matshow(d, extent=[xlim[0], xlim[1], ylim[0], ylim[1]], origin='lower')
+    plt.colorbar()
+
+    # will this fix it?
+    # no
+    #time.sleep(3)
 
     plt.title('Decision boundary for model in problem ' + problem)
-    plt.colorbar()
-    #plt.show()
 
-    '''
-    if X.shape[0] == y.shape[0]:
-        X_c0 = X[(y == 0).flatten(), :]
-        X_c1 = X[(y == 1).flatten(), :]
+    # TODO why are these always hidden by matshow?
+    #c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
+    #c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
 
-        c0 = plt.scatter(X_c0[:,0], X_c0[:,1], c='r')
-        c1 = plt.scatter(X_c1[:,0], X_c1[:,1],  c='b')
-    else:
-        X_c0 = X[:, (y == 0).flatten()]
-        X_c1 = X[:, (y == 1).flatten()]
-    '''
-
-    c0 = plt.scatter(X[0,(y==0).flatten()], X[1,(y==0).flatten()], c='r')
-    c1 = plt.scatter(X[0,(y==1).flatten()], X[1,(y==1).flatten()],  c='b')
+    # not even the legend shows up in this case
+    c0 = plt.plot(X[0,(y==0).flatten()], X[1,(y==0).flatten()], 'r.')
+    c1 = plt.plot(X[0,(y==1).flatten()], X[1,(y==1).flatten()], 'b.')
 
     plt.legend([c0, c1], ['Class 0', 'Class 1'])
 
@@ -269,7 +276,7 @@ def train_net(X, y, dims, iterations):
 
         t = t + 1
 
-        if t % (iterations / 100) == 0:
+        if verbose and t % (iterations / 100) == 0:
             print('t=' + str(t))
             print('loss=' + str(L))
             print('accuracy=' + str(accuracy(y_est, y)))
@@ -302,8 +309,10 @@ ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
 
-"""
 print('1.1')
+
+# scatter plot to compare all decision heatmaps against
+xlim, ylim = plot_classes(Xtr, ytr, '1')
 
 # doesnt count input (data) or output layer
 # because those are determined by dimensions of X and y
@@ -326,13 +335,14 @@ y_est_ts = eval_net(W, Xts)
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.1')
+d1 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.1')
 
+'''
 print('1.2')
 plt.figure()
 
 dims = [2]
-W, loss_t, y_eest = train_net(Xtr, ytr, dims, 50000)
+W, loss_t, _ = train_net(Xtr, ytr, dims, 50000)
 
 plt.plot(loss_t)
 plt.title('Loss over time for 1.2')
@@ -346,21 +356,17 @@ y_est_ts = eval_net(W, Xts)
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
-"""
-# scatter plot to compare all decision heatmaps against
-xlim, ylim = plot_classes(Xtr, ytr, '1')
+d2 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
+'''
 
 print('1.4')
 plt.figure()
 
-dims = [4, 3]
+dims = [20, 2]
 # TODO training for 10^6 iterations eventually leads to oscillations 
 # around 32-33 loss. why?
 # in loss or actually just in accuracy? should cost func explicitly model the latter?
-W, loss_t, y_eest = train_net(Xtr, ytr, dims, 100000)
-
-print(Xtr.shape)
+W, loss_t, _ = train_net(Xtr, ytr, dims, 90000)
 
 plt.plot(loss_t)
 plt.title('Loss over time for 1.4')
@@ -368,18 +374,15 @@ plt.xlabel('Iteration number')
 plt.ylabel('Squared error loss function')
 plt.show()
 
-print(len(W))
-print(Xtr.shape)
-
 # TODO why are these values different from values returned from training?
+# check, but they should be the same now
 y_est = eval_net(W, Xtr)
 y_est_ts = eval_net(W, Xts)
 
-# TODO is testing always better than train??? it was this time... by 2.4% points as well
 print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
-d = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
+d4 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 
 """
 Problem 2
@@ -393,4 +396,8 @@ Xtr = Train['data']
 ytr = Train['labels']
 Xts = Test['data']
 yts = Test['labels']
+
+dims = [5, 5]
+
+W, loss_t, _ = train_net(Xtr, ytr, dims, 50000)
 '''

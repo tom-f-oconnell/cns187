@@ -10,9 +10,11 @@ sns.set()
 # perhaps redundant
 sns.set_style('dark')
 
+# these two are not used right now
 should_plot = True
 save_figs = False
-verbose = False
+
+verbose = True
 
 figpath = './figures/'
 
@@ -132,7 +134,6 @@ def eval_net(W, X, ret_intermediate=False, addones=True):
     else:
         return g
 
-
 def loss(y, y_est):
     '''
     Returns the squared error between provided estimates and true values.
@@ -143,7 +144,20 @@ def loss(y, y_est):
     elif y_est.shape == y.transpose().shape:
         return np.sum(np.square(y_est - y.transpose()))
     else:
+        # TODO raise appropriate exception instead
         assert False
+
+def expand_images(X):
+    """
+    Convert 28 x 28 MNIST images into vectors
+    """
+
+    X_ex = np.empty((X.shape[0] * X.shape[1], X.shape[2])) * np.nan
+
+    for n in range(0, X.shape[2]):
+        X_ex[:,n] = X[:,:,n].flatten()
+
+    return X_ex
 
 def one_hot_encoding(y):
     """
@@ -159,7 +173,7 @@ def one_hot_encoding(y):
     return y_oh
 
     
-def backprop(W, X, y, y_est, S, G, rate):
+def backprop(W, X, y, y_est, S, G, rate, sgd=False):
     '''
     Uses the backpropagation algorithm to adjust the weights in place 
     by gradient descent.
@@ -171,42 +185,129 @@ def backprop(W, X, y, y_est, S, G, rate):
     
     # for the last layer; the base case
     # L in superscript is the last layer, otherwise L = Loss
-    delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
 
-    # now recursively, for the other layers
-    l = len(W) - 1
-    while l > 0:
-        # to make sure the dimensions don't change
-        dims = [w.shape for w in W]
+    if not sgd:
+        delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
 
-        # update the weights of the current layer
-        # uses the same formula as the last layer does (could collapse)
-        # what would happen if you had different learning rates for different layers?
-        # work on this?
-        W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
+        '''
+        print('delta before loop')
+        tmp = delta
+        print(tmp.mean())
+        print(tmp.var())
+        print(np.sum(np.square(tmp))) 
+        print('')
 
-        # the weights matrices should not have changed dimensions
-        for w, d in zip(W, dims):
-            try:
-                assert w.shape == d
-            except AssertionError:
-                print(str(w.shape) + ' differed from previous ' + str(d))
-                assert False
+        # these were the (~0) terms
+        print(S[-1].mean())
+        print(S[-1].var())
+        print(d_logistic(S[-1]).mean())
+        print(d_logistic(S[-1]).var())
+        print((y_est - y.transpose()).mean())
+        print((y_est - y.transpose()).var())
 
-        # actually propagate back one layer
-        # i.e. use the delta from the previous layer
-        # to calculate the delta for the current layer
-        sum_term = np.dot(W[l], delta)
+        print('')
+        '''
 
-        # delta for layer l-1
-        delta = d_logistic(S[l-1]) * sum_term
+        # now recursively, for the other layers
+        l = len(W) - 1
+        while l > 0:
+            # to make sure the dimensions don't change
+            # dims = [w.shape for w in W]
 
-        # now move one layer closer to the input
-        l = l - 1
-    
-    return None
+            # update the weights of the current layer
+            # uses the same formula as the last layer does (could collapse)
+            # what would happen if you had different learning rates for different layers?
+            # work on this?
+            
+            # this actually does fail
+            #assert np.allclose(rate * np.dot(G[l-1], delta.transpose()), np.zeros(W[l].shape))
 
-def train_net(X, y, dims, iterations):
+            # TODO these quickly all go to zero (after 1 or 2 iteration)
+            # (not with learning rate ~0.001 though)
+            '''
+            print('weight update')
+            tmp = rate * np.dot(G[l-1], delta.transpose())
+            print(tmp.mean())
+            print(tmp.var())
+            print(np.sum(np.square(tmp))) 
+            print('')
+            '''
+
+            W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
+
+            ''' they haven't been ''
+            # the weights matrices should not have changed dimensions
+            for w, d in zip(W, dims):
+                try:
+                    assert w.shape == d
+                except AssertionError:
+                    print(str(w.shape) + ' differed from previous ' + str(d))
+                    assert False
+            '''
+
+            # actually propagate back one layer
+            # i.e. use the delta from the previous layer
+            # to calculate the delta for the current layer
+            sum_term = np.dot(W[l], delta)
+
+            '''
+            print('sum_term')
+            tmp = sum_term
+            print(tmp.mean())
+            print(tmp.var())
+            print(np.sum(np.square(tmp))) 
+            print('')
+            '''
+
+            # delta for layer l-1
+            delta = d_logistic(S[l-1]) * sum_term
+            
+            '''
+            print('delta')
+            tmp = delta
+            print(tmp.mean())
+            print(tmp.var())
+            print(np.sum(np.square(tmp))) 
+            print('')
+            '''
+
+            # now move one layer closer to the input
+            l = l - 1
+    else:
+        '''
+        print(y_est.shape)
+        print(S[-1].shape)
+        print(G[-1].shape)
+        '''
+        # all 10 x 60k
+        for i in range(0, y_est.shape[0]):
+            print(i)
+            delta = 2 * (y_est[:,i] - y.transpose()[:,i]) * d_logistic(S[-1][:,i])
+            l = len(W) - 1
+            while l > 0:
+                # 11x10
+                print(W[l].shape)
+                # 11,
+                print(G[l-1][:,i].shape)
+                # 10,
+                print(delta.transpose().shape)
+                print((rate * np.dot(G[l-1][:,i], delta.transpose())).shape)
+                W[l] = W[l] - (rate * np.dot(G[l-1][:,i], delta.transpose()))
+                delta = d_logistic(S[l-1][:,i]) * np.dot(W[l], delta)
+                l = l - 1
+        '''
+        # so odd that this works but above doesnt
+        for i in range(0, y_est.shape[0]):
+            delta = 2 * (y_est - y.transpose()) * d_logistic(S[-1])
+            l = len(W) - 1
+            while l > 0:
+                W[l] = W[l] - (rate * np.dot(G[l-1], delta.transpose()))
+                delta = d_logistic(S[l-1]) * np.dot(W[l], delta)
+                l = l - 1
+        '''
+
+
+def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
     '''
     Train a neural network with number of units in all hidden layers
     determined by the corresponding element in dims.
@@ -215,13 +316,7 @@ def train_net(X, y, dims, iterations):
 
     Returns the weights for each layer (apart from the first = data).
     '''
-    '''
-    # only for current version of cross-entropy cost function
-    y = y.astype(dtype=np.int16)
-    y[y == 0] = -1
-    '''
 
-    print('Training network...')
     # add the column of ones for the bias weights
     X = add_ones(X)
 
@@ -233,18 +328,21 @@ def train_net(X, y, dims, iterations):
     # since it must be the dimensions of the output
 
     W = []
-    # TODO will need to re-encode multiclass output in one-hot format or this wont work
     dims = [X.shape[0]] + dims + [y.shape[1]]
+    print('Training network with dims ' + str(dims) + '...')
+    print(str(iterations) + ' iterations at ' + str(rate) + ' learning rate.')
+    if sgd:
+        print('Using sgd.')
 
     # initialize all weights to random values
     for l in range(0, len(dims) - 1):
-        W_l = np.random.rand(dims[l], dims[l+1])
+        W_l = np.random.rand(dims[l], dims[l+1]) - 0.5
         W.append(W_l)
 
     # learning rate
     # could put on a schedule
     # 0.01 is too high. oscillations.
-    rate = 0.001
+    # (a kwarg now)
 
     last_loss = np.nan
     loss_t = np.zeros(iterations)
@@ -260,7 +358,7 @@ def train_net(X, y, dims, iterations):
         loss_t[t] = L
 
         # weights adjusted in place
-        backprop(W, X, y, y_est, S, G, rate)
+        backprop(W, X, y, y_est, S, G, rate, sgd=sgd)
 
         t = t + 1
 
@@ -273,21 +371,34 @@ def train_net(X, y, dims, iterations):
     return W, loss_t, y_est
 
 def accuracy(y_est, y):
+    # TODO just always transpose y
     # abstracts away some of the sign convention stuff
 
-    if np.any(y == -1):
-        return np.sum(np.sign(y_est) == y) / np.size(y)
-    else:
+    # check for one hot encoding
+    if y_est.shape[0] > 1:
+
         if y_est.shape == y.shape:
-            return np.sum(np.round(y_est) == y) / np.size(y)
+            return np.sum(np.argmax(y_est, axis=0) == np.argmax(y, axis=0)) / np.size(y)
         elif y.transpose().shape == y_est.shape:
-            return np.sum(np.round(y_est) == y.transpose()) / np.size(y)
+            return np.sum(np.argmax(y_est, axis=0) == np.argmax(y.transpose(), axis=0)) / np.size(y)
         else:
             assert False
+    else:
+        if np.any(y == -1):
+            return np.sum(np.sign(y_est) == y) / np.size(y)
+        else:
+            if y_est.shape == y.shape:
+                return np.sum(np.round(y_est) == y) / np.size(y)
+            elif y.transpose().shape == y_est.shape:
+                return np.sum(np.round(y_est) == y.transpose()) / np.size(y)
+            else:
+                assert False
 
 '''
 Problem 1
 '''
+# TODO train might actually be worse than test sometimes...
+# why? not optimizing correctly? a function of the way the two were created?
 
 Data = scipy.io.loadmat('dataset.mat')
 
@@ -296,7 +407,7 @@ Xtr = Data['Xtr']
 ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
-
+'''
 print('1.1')
 
 # scatter plot to compare all decision heatmaps against
@@ -305,7 +416,7 @@ xlim, ylim = plot_classes(Xtr, ytr, '1')
 # doesnt count input (data) or output layer
 # because those are determined by dimensions of X and y
 dims = [5, 5]
-W, loss_t, y_eest = train_net(Xtr, ytr, dims, 50000)
+W, loss_t, y_eest = train_net(Xtr, ytr, dims, 20000)
 
 plt.figure()
 plt.plot(loss_t)
@@ -326,7 +437,6 @@ print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
 d1 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.1')
 
-'''
 print('1.2')
 plt.figure()
 
@@ -346,7 +456,6 @@ print('Training set accuracy=' + str(accuracy(y_est, ytr)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
 d2 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
-'''
 
 print('1.4')
 
@@ -373,6 +482,7 @@ print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
 d4 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 
+'''
 """
 Problem 2
 """
@@ -385,10 +495,33 @@ ytr = Train['labels']
 Xts = Test['data']
 yts = Test['labels']
 
+# expand the images into vectors of features
+Xtr_ex = expand_images(Xtr)
+Xts_ex = expand_images(Xts)
+
+# now the shapes all match what i used above
+# in terms of orders of features and examples
+
 # recode the output as vectors of 0 and 1
 ytr_oh = one_hot_encoding(ytr)
 yts_oh = one_hot_encoding(yts)
 
-dims = [5, 5]
+# was 10, 10, but was taking forever
+dims = [784, 11]
 
-W, loss_t, _ = train_net(Xtr, ytr_oh, dims, 50000)
+# default rate was 0.001
+# TODO maybe try SGD?
+# reasons loss might be changing so slowly?
+
+# TODO schedule with rate and change back if start oscillating?
+W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 500, rate=0.0001, sgd=True)
+
+y_est = eval_net(W, Xtr_ex)
+y_est_ts = eval_net(W, Xts_ex)
+
+print('Training set accuracy=' + str(accuracy(y_est, ytr_oh)))
+print('Testing set accuracy=' + str(accuracy(y_est_ts, yts_oh)))
+
+# TODO generate confusion matrix
+
+

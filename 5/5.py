@@ -286,7 +286,7 @@ def backprop(W, X, y, y_est, S, G, rate):
         l = l - 1
 
 
-def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
+def train_net(X, y, dims, iterations, rate=0.01, batch=None, decay=None):
     '''
     Train a neural network with number of units in all hidden layers
     determined by the corresponding element in dims.
@@ -310,8 +310,11 @@ def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
     dims = [X.shape[0]] + dims + [y.shape[1]]
     print('Training network with dims ' + str(dims) + '...')
     print(str(iterations) + ' iterations at ' + str(rate) + ' learning rate.')
-    if sgd:
-        print('Using sgd.')
+    if not batch is None:
+        print('Using batch size of ' + str(batch))
+    if not decay is None:
+        print('Decaying learning rate every ' + str(iterations / 1000) + \
+                ' iterations by factor of ' + str(decay)) 
 
     # initialize all weights to random values
     for l in range(0, len(dims) - 1):
@@ -330,7 +333,7 @@ def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
     # fit the parameters by repeating forward -> backprop (gradient descent)
     while t < iterations:
 
-        if not sgd:
+        if batch is None:
             # forward prop for our estimate
             y_est, S, G = eval_net(W, X, ret_intermediate=True, addones=False)
 
@@ -340,24 +343,31 @@ def train_net(X, y, dims, iterations, rate=0.01, sgd=False):
             L = loss(y, y_est)
             loss_t[t] = L
         else:
-            # TODO for SGD, t will need to exceed 60000 to sample everything even once
             
-            y_est, S, G = eval_net(W, X[:,(t % X.shape[1])].reshape((X.shape[0],1)) \
+            # TODO fix boundary problems where less samples are taken at end
+            start = ((t * batch) % X.shape[1])
+            last = start + batch
+            y_est, S, G = eval_net(W, X[:,start:last].reshape((X.shape[0],batch)) \
                     , ret_intermediate=True, addones=False)
 
-            backprop(W, X[:,(t % X.shape[1])].reshape((X.shape[0],1)), \
-                    y[(t % X.shape[1]),:].reshape((1,y.shape[1])), y_est, S, G, rate)
+            backprop(W, X[:,start:last].reshape((X.shape[0],batch)), \
+                    y[start:last,:].reshape((batch,y.shape[1])), y_est, S, G, rate)
 
-        if verbose and (sgd and t % (iterations / 10) == 0) or \
-                (not sgd and t % (iterations / 100) == 0):
+        if verbose and t % (iterations / 1000) == 0:
 
             y_est = eval_net(W, X, ret_intermediate=False, addones=False)
             L = loss(y, y_est)
             loss_t[t] = L
 
+            print('rate=' + str(rate))
             print('t=' + str(t))
             print('loss=' + str(L))
             print('accuracy=' + str(accuracy(y_est, y)))
+            print('')
+
+            if not decay is None:
+                # TODO better schedule?
+                rate = decay * rate
 
         t = t + 1
 
@@ -507,8 +517,10 @@ dims = [784, 11]
 # numerical problems for small learning rates? + getting "stuck"
 
 # TODO schedule with rate and change back if start oscillating?
-# TODO use batch size parameter instead of just 'sgd' (batch = 1)
-W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1000000, rate=0.001, sgd=True)
+
+# batchsize=1 started to oscillate around rate 0.1
+# for decay, w/ 1000 decay times, try 0.99 or 0.98 for start
+W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1000000, rate=0.01, batch=50, decay=0.99)
 
 y_est = eval_net(W, Xtr_ex)
 y_est_ts = eval_net(W, Xts_ex)

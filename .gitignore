@@ -1,1 +1,6 @@
 *.pdf
+*.mat
+*.npy
+*.swp
+*.swo
+*.swn

@@ -6,6 +6,8 @@ import seaborn as sns
 import scipy.io
 import time
 
+import pickle
+
 sns.set()
 # perhaps redundant
 sns.set_style('dark')
@@ -353,14 +355,15 @@ def train_net(X, y, dims, iterations, rate=0.01, batch=None, decay=None):
             backprop(W, X[:,start:last].reshape((X.shape[0],batch)), \
                     y[start:last,:].reshape((batch,y.shape[1])), y_est, S, G, rate)
 
-        if verbose and t % (iterations / 1000) == 0:
+        if verbose and t % (iterations / 100) == 0:
+
+            print('t=' + str(t))
 
             y_est = eval_net(W, X, ret_intermediate=False, addones=False)
             L = loss(y, y_est)
             loss_t[t] = L
-
+            
             print('rate=' + str(rate))
-            print('t=' + str(t))
             print('loss=' + str(L))
             print('accuracy=' + str(accuracy(y_est, y)))
             print('')
@@ -375,16 +378,15 @@ def train_net(X, y, dims, iterations, rate=0.01, batch=None, decay=None):
     return W, loss_t, y_est
 
 def accuracy(y_est, y):
-    # TODO just always transpose y
     # abstracts away some of the sign convention stuff
 
     # check for one hot encoding
     if y_est.shape[0] > 1:
-
         if y_est.shape == y.shape:
-            return np.sum(np.argmax(y_est, axis=0) == np.argmax(y, axis=0)) / np.size(y)
+            return np.sum(np.argmax(y_est, axis=1) == np.argmax(y, axis=1)) / y_est.shape[0]
         elif y.transpose().shape == y_est.shape:
-            return np.sum(np.argmax(y_est, axis=0) == np.argmax(y.transpose(), axis=0)) / np.size(y)
+            return np.sum(np.argmax(y_est, axis=0) == np.argmax(y.transpose(), axis=0)) \
+                    / y_est.shape[1]
         else:
             assert False
     else:
@@ -490,6 +492,7 @@ d4 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 """
 Problem 2
 """
+
 Train = scipy.io.loadmat('mnist_train.mat')
 Test = scipy.io.loadmat('mnist_test.mat')
 
@@ -503,24 +506,27 @@ yts = Test['labels']
 Xtr_ex = expand_images(Xtr)
 Xts_ex = expand_images(Xts)
 
-# now the shapes all match what i used above
-# in terms of orders of features and examples
-
 # recode the output as vectors of 0 and 1
 ytr_oh = one_hot_encoding(ytr)
 yts_oh = one_hot_encoding(yts)
 
-# was 10, 10, but was taking forever
-dims = [784, 11]
+use_saved = False
 
-# default rate was 0.001
-# numerical problems for small learning rates? + getting "stuck"
-
-# TODO schedule with rate and change back if start oscillating?
-
-# batchsize=1 started to oscillate around rate 0.1
-# for decay, w/ 1000 decay times, try 0.99 or 0.98 for start
-W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1000000, rate=0.01, batch=50, decay=0.99)
+if not use_saved:
+    dims = [784, 11]
+#    W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 40000, rate=0.01, batch=50, decay=0.99)
+    W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1, rate=0.01, batch=50, decay=0.99)
+    pickle.dump(W, open("W.p", "wb"))
+    #np.save('W.npy', W, allow_pickle=False)
+    #np.save('loss_t.npy', loss_t, allow_pickle=False)
+else:
+    W = pickle.load(open("W.", "rb"))
+    '''
+    with open('W.npy', 'r') as f:
+        W = np.load(f)
+    with open('loss_t.npy', 'r') as f:
+        loss_t = np.load(f)
+    '''
 
 y_est = eval_net(W, Xtr_ex)
 y_est_ts = eval_net(W, Xts_ex)
@@ -529,5 +535,15 @@ print('Training set accuracy=' + str(accuracy(y_est, ytr_oh)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts_oh)))
 
 # TODO generate confusion matrix
+# frequency over true class by predicted class dimensions
+classes = ytr_oh.shape[0]
+Confusion = np.empty((classes,classes)) * np.nan
 
+print(Xtr_ex.shape)
 
+for c in classes:
+    y = eval_net(W, Xtr_ex[ytr == c,:])
+    print(y.shape)
+    # first index is true class
+    # unnormalized
+    Confusion[c,:] = np.sum(y, axis=1)

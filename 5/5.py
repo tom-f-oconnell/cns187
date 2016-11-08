@@ -534,6 +534,13 @@ y_est_ts = eval_net(W, Xts_ex)
 print('Training set accuracy=' + str(accuracy(y_est, ytr_oh)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts_oh)))
 
+plt.figure()
+
+plt.plot(np.where(loss_t != 0)[0] * 1000, loss_t[loss_t != 0], '-')
+plt.title('Loss during training of network on MNIST')
+plt.xlabel('Iteration number')
+plt.ylabel('Loss')
+
 classes = ytr_oh.shape[1]
 
 # frequency over true class by predicted class dimensions
@@ -554,3 +561,4 @@ plt.ylabel('Predicted class')
 # TODO normalize?
 plt.colorbar()
 plt.show()
+

@@ -403,8 +403,6 @@ def accuracy(y_est, y):
 '''
 Problem 1
 '''
-# TODO train might actually be worse than test sometimes...
-# why? not optimizing correctly? a function of the way the two were created?
 
 Data = scipy.io.loadmat('dataset.mat')
 
@@ -413,7 +411,7 @@ Xtr = Data['Xtr']
 ytr = Data['ytr']
 Xts = Data['Xts']
 yts = Data['yts']
-'''
+
 print('1.1')
 
 # scatter plot to compare all decision heatmaps against
@@ -432,9 +430,6 @@ plt.ylabel('Squared error loss function')
 plt.show()
 
 y_est = eval_net(W, Xtr)
-
-# TODO remove
-# assert np.allclose(y_eest, y_est, rtol=0.01, atol=0.02)
 
 y_est_ts = eval_net(W, Xts)
 
@@ -466,9 +461,7 @@ d2 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.2')
 print('1.4')
 
 dims = [50]
-# TODO training for 10^6 iterations eventually leads to oscillations 
-# around 32-33 loss. why?
-# in loss or actually just in accuracy? should cost func explicitly model the latter?
+
 W, loss_t, _ = train_net(Xtr, ytr, dims, 80000)
 
 plt.figure()
@@ -478,8 +471,6 @@ plt.xlabel('Iteration number')
 plt.ylabel('Squared error loss function')
 plt.show()
 
-# TODO why are these values different from values returned from training?
-# check, but they should be the same now
 y_est = eval_net(W, Xtr)
 y_est_ts = eval_net(W, Xts)
 
@@ -488,7 +479,6 @@ print('Testing set accuracy=' + str(accuracy(y_est_ts, yts)))
 
 d4 = map_decisions(W, Xtr, ytr, xlim, ylim, '1.4')
 
-'''
 """
 Problem 2
 """
@@ -510,7 +500,7 @@ Xts_ex = expand_images(Xts)
 ytr_oh = one_hot_encoding(ytr)
 yts_oh = one_hot_encoding(yts)
 
-use_saved = True
+use_saved = False
 
 if not use_saved:
     dims = [784, 11]
@@ -555,10 +545,8 @@ for c in range(0,classes):
 # log scale maybe?
 plt.matshow(Confusion, cmap=plt.cm.viridis)
 plt.title('Confusion matrix for MNIST classifier')
-# TODO check these are right
 plt.xlabel('True class')
 plt.ylabel('Predicted class')
 # TODO normalize?
 plt.colorbar()
 plt.show()
-

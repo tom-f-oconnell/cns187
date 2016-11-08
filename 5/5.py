@@ -510,23 +510,23 @@ Xts_ex = expand_images(Xts)
 ytr_oh = one_hot_encoding(ytr)
 yts_oh = one_hot_encoding(yts)
 
-use_saved = False
+use_saved = True
 
 if not use_saved:
     dims = [784, 11]
-#    W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 40000, rate=0.01, batch=50, decay=0.99)
-    W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 1, rate=0.01, batch=50, decay=0.99)
-    pickle.dump(W, open("W.p", "wb"))
-    #np.save('W.npy', W, allow_pickle=False)
-    #np.save('loss_t.npy', loss_t, allow_pickle=False)
+    W, loss_t, _ = train_net(Xtr_ex, ytr_oh, dims, 40000, rate=0.01, batch=50, decay=0.99)
+
+    print('Saving weights and loss during training to two separate .npy files.')
+
+    np.save('W.npy', W)
+    np.save('loss_t.npy', loss_t)
 else:
-    W = pickle.load(open("W.", "rb"))
-    '''
-    with open('W.npy', 'r') as f:
+    print('Loading saved weights and loss during training.')
+
+    with open('W.npy', 'rb') as f:
         W = np.load(f)
-    with open('loss_t.npy', 'r') as f:
+    with open('loss_t.npy', 'rb') as f:
         loss_t = np.load(f)
-    '''
 
 y_est = eval_net(W, Xtr_ex)
 y_est_ts = eval_net(W, Xts_ex)
@@ -534,16 +534,23 @@ y_est_ts = eval_net(W, Xts_ex)
 print('Training set accuracy=' + str(accuracy(y_est, ytr_oh)))
 print('Testing set accuracy=' + str(accuracy(y_est_ts, yts_oh)))
 
-# TODO generate confusion matrix
+classes = ytr_oh.shape[1]
+
 # frequency over true class by predicted class dimensions
-classes = ytr_oh.shape[0]
 Confusion = np.empty((classes,classes)) * np.nan
 
-print(Xtr_ex.shape)
-
-for c in classes:
-    y = eval_net(W, Xtr_ex[ytr == c,:])
-    print(y.shape)
+for c in range(0,classes):
+    y = eval_net(W, Xtr_ex[:, (ytr == c).flatten()])
     # first index is true class
     # unnormalized
     Confusion[c,:] = np.sum(y, axis=1)
+
+# log scale maybe?
+plt.matshow(Confusion, cmap=plt.cm.viridis)
+plt.title('Confusion matrix for MNIST classifier')
+# TODO check these are right
+plt.xlabel('True class')
+plt.ylabel('Predicted class')
+# TODO normalize?
+plt.colorbar()
+plt.show()

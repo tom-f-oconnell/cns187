@@ -64,6 +64,26 @@ def plot_states(states, values, start=None, ends=set(), policy=dict()):
 
     plt.show()
 
+def values_equal(values1, values2):
+    """ Compare two dicts that have float values, using np.isclose to compare them. """
+
+    # they must be dicts
+    if not type(values1) == dict:
+        return False
+    if not type(values2) == dict:
+        return False
+
+    for k, v in values1.items():
+        # TODO check that this function returns False (under expected operation)
+        # because of the np.close statement
+        if not (k in values2 and np.isclose(values1[k], values2[k])):
+            return False
+
+    # make sure values2 doesn't have extra elements
+    if len(values2) == len(values1):
+        return True
+
+    return False
 
 # TODO cache these?
 def get_neighbors(s, states):
@@ -115,18 +135,28 @@ def R(s, s_prime):
     else:
         return 0
 
-def V(s, neighbors, V, discount):
+def V(s, policy, values, discount):
     """ Calculate the expected future value of a single state s.
         Uses existing value estimate in calculation.  """
 
+    '''
     acc = 0
 
     # calculate the expected value of a certain state
     # 'over a potentially infinite horizon'
     for s_prime in neighbors[s]:
-        acc += P(s,s_prime) * (R(s,s_prime) + discount * V(s_prime))
-    
+        # TODO correct w/ values and everything? P evaluation might be wrong...
+        acc += P(s,s_prime) * (R(s,s_prime) + discount * values[s_prime])
+
     return acc
+    '''
+    # generally we might need the neighbors, but for this problem
+    # the policy is fine (deterministic)
+
+    # TODO implement more generally applicable version
+
+    s_prime = policy[s]
+    return P(s, s_prime) * (R(s, s_prime) + discount * values[s_prime])
 
 def update_policy(V_curr, states, neighbors):
     # doesn't actually need current policy (that just factors in to V)
@@ -147,21 +177,27 @@ def update_policy(V_curr, states, neighbors):
         # but we do have to loop over possible actions, which are one-to-one with s_prime
         # (argmax loop in wiki formula)
         for i, s_prime in enumerate(neighbors[s]):
-            if V_curr[neighbors[s][i]] > best:
+            if V_curr[ns[i]] > best:
                 best = V_curr[ns[i]]
                 policy[s] = ns[i]
 
     return policy
 
 # TODO handle probability in way consistent w/ above
-def update_values(V_prev, states, neighbors, discount):
-    V_next = np.empty_like(V_prev) * np.nan
+def update_values(values, states, policy, discount):
+    # not a defaultdict anymore
+    v_next = dict()
 
-    for s in range(V_next.shape[0]):
+    for s in states:
         # TODO is this the right step 2?
-        V_next[s] = V(states[s], neighbors, V_prev, discount)
 
-    return V_next
+        # only need policy and not neighbors, since the policy
+        # produces a deterministic result (we don't need to sum
+        # over all of the neighbors and weight be the probability
+        # of our action taking us to that state)
+        v_next[s] = V(s, policy, values, discount)
+
+    return v_next
 
 # the figure homework 7
 states = {(0,0),(0,1),(0,2),(0,3),\
@@ -172,6 +208,7 @@ states = {(0,0),(0,1),(0,2),(0,3),\
 # WARNING: if you try to read any missing states,
 # the dictionary may enter them mapped to the default value
 # (so that it gets iterated over and 'in' checks pass)
+# TODO are these initial values fine?
 values = defaultdict(int)
 values[(1,2)] = -5
 values[(2,3)] =  5
@@ -187,9 +224,6 @@ for s in states:
 discount = 0.99
 
 pi = initial_policy(neighbors)
-# TODO values to initial random states too?
-# a problem to do all zeros or whatever if some initial values are less than 0?
-V_curr = np.zeros(len(pi))
 
 '''
 Implement a dynamic programming approach to solve this problem using policy it-
@@ -198,7 +232,7 @@ each cell on the grid, display the value of the optimal value function V ∗ and
 optimal policy π ∗ using arrows
 '''
 
-#plot_states(states, values, start_state, end_states, pi)
+plot_states(states, values, start_state, end_states, pi)
 
 policy_iterations = 100
 value_iterations = 1000
@@ -210,20 +244,24 @@ while p < policy_iterations:
     # TODO not quite sure how to formulate this in terms of DP
     # so will first just try and implement equations in wiki on MDPs
     last_pi = pi
-    pi = update_policy(V_curr, states, neighbors)
+    pi = update_policy(values, states, neighbors)
     # check for policy convergence
     if pi == last_pi:
         print('Policy converged.')
         break
 
     v = 0
-    last_V = np.empty_like(V_curr) * np.nan
+
+    last_values = None
 
     # either for a certain number of iterations or until convergence
-    while v < value_iterations and not np.allclose(V_prev, V_curr):
-        last_V = V_curr
+    while v < value_iterations and not values_equal(last_values, values):
         # TODO no mutability issue right?
-        V_curr = update_values(V_curr, states, neighbors, discount)
+        last_values = values
+        values = update_values(values, states, pi, discount)
         v += 1
 
     p += 1
+
+plot_states(states, values, start_state, end_states, pi)
+# TODO plot values too

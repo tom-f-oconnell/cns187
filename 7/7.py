@@ -12,6 +12,9 @@ verbose = False
 
 sns.set_style('dark')
 
+if should_plot:
+    plt.close('all')
+
 """
 Policy iteration and Q-learning practice
 """

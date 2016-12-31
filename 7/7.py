@@ -14,7 +14,11 @@ Policy iteration and Q-learning practice
 """
 
 # TODO more general name
-def plot_states(states, values, start=None, ends=set(), policy=dict()):
+def plot_states(states, values, start=None, ends=set(), policy=dict(), discount=0.99):
+    # display terms with values plugged in, but unevaluated
+    # on the grid, for debugging
+    plot_equations = True
+
     plt.figure()
     # TODO cover range of state coordinates
     plt.axis([0,4,0,3])
@@ -31,7 +35,6 @@ def plot_states(states, values, start=None, ends=set(), policy=dict()):
 
     for s in states:
         # TODO black for missing states?
-        # TODO use .text to overlay value
         if values[s] == 0:
             c="white"
         elif values[s] > 0:
@@ -48,9 +51,8 @@ def plot_states(states, values, start=None, ends=set(), policy=dict()):
             plt.text(s[1] + width * 0.05, s[0] + height * 0.13, 'End')
 
         # TODO how to plot bold?
-        # how to draw arrows?
         if not values[s] == 0:
-            plt.text(s[1] + width * 0.46, s[0] + height * 0.5, str(values[s]))
+            plt.text(s[1] + width * 0.65, s[0] + height * 0.94, '%.1f' % values[s])
 
     # policies in our example map from states to neighboring states
     # more generally, they map to actions, which may not deterministically
@@ -61,6 +63,16 @@ def plot_states(states, values, start=None, ends=set(), policy=dict()):
         dy = (s2[1] - s1[1]) * arrow_scale
         dx = (s2[0] - s1[0]) * arrow_scale
         plt.arrow(s1[1] + width * 0.5, s1[0] + height * 0.5, dy, dx)
+
+    if plot_equations:
+        for s in states:
+            # TODO actually pass discount
+            plt.text(s[1] + width * 0.1, s[0] + height * 0.6, \
+                '%.1f * (%.1f + \n%.2f * %.1f)' % \
+                (1.0, R(s, policy[s]), discount, V(s, policy, values, discount)))
+
+        plt.xlabel('P(s, s_prime) * (R(s, s_prime) + discount * values[s_prime])')
+
 
     plt.show()
 
@@ -104,16 +116,22 @@ def get_neighbors(s, states):
 
     return ns
 
-def initial_policy(neighbors):
+def initial_policy(neighbors, ends=set()):
     """ Generate a random initial policy uniformly """
 
     policy = dict()
 
     for s, ns in neighbors.items():
-        # pick a random next state
-        # so our initial policy is defined everywhere
-        # needs to be a neighbor of s
-        policy[s] = random.choice(list(ns))
+        if s in ends:
+            # TODO maybe handle some other way?
+            # if this won't by itself allow convergence
+            # end states should not allow outward transitions (?)
+            policy[s] = s
+        else:
+            # pick a random next state
+            # so our initial policy is defined everywhere
+            # needs to be a neighbor of s
+            policy[s] = random.choice(list(ns))
 
     return policy
 
@@ -125,6 +143,9 @@ def P(s, s_prime):
 def R(s, s_prime):
     """ Defines the rewards after making transitions from s to s_prime. """
     # TODO what other variables? a and pi?
+
+    if s == s_prime:
+        return 0
 
     # green square gets +5
     if s_prime == (2,3):
@@ -158,7 +179,7 @@ def V(s, policy, values, discount):
     s_prime = policy[s]
     return P(s, s_prime) * (R(s, s_prime) + discount * values[s_prime])
 
-def update_policy(V_curr, states, neighbors):
+def update_policy(V_curr, states, neighbors, ends=set()):
     # doesn't actually need current policy (that just factors in to V)
     
     policy = dict()
@@ -167,19 +188,21 @@ def update_policy(V_curr, states, neighbors):
     # because there is no probability of landing in states not selected
     # by the action (in our problem)
 
-    for s in states:
-        # TODO could make negative infinity or equivalent
-        # and policy[s] = whatever
-        ns = list(neighbors[s])
-        best = V_curr[ns[0]]
-        policy[s] = ns[0]
+    for e in ends:
+        policy[e] = e
 
-        # but we do have to loop over possible actions, which are one-to-one with s_prime
-        # (argmax loop in wiki formula)
-        for i, s_prime in enumerate(neighbors[s]):
-            if V_curr[ns[i]] > best:
-                best = V_curr[ns[i]]
-                policy[s] = ns[i]
+    for s in states:
+        if not s in ends:
+            ns = list(neighbors[s])
+            best = V_curr[ns[0]]
+            policy[s] = ns[0]
+
+            # but we do have to loop over possible actions, which are one-to-one with s_prime
+            # (argmax loop in wiki formula)
+            for s_prime in ns:
+                if V_curr[s_prime] > best:
+                    best = V_curr[s_prime]
+                    policy[s] = s_prime
 
     return policy
 
@@ -223,7 +246,7 @@ for s in states:
 
 discount = 0.99
 
-pi = initial_policy(neighbors)
+pi = initial_policy(neighbors, end_states)
 
 '''
 Implement a dynamic programming approach to solve this problem using policy it-
@@ -234,8 +257,8 @@ optimal policy π ∗ using arrows
 
 plot_states(states, values, start_state, end_states, pi)
 
-policy_iterations = 100
-value_iterations = 1000
+policy_iterations = 1
+value_iterations = 4
 
 p = 0
 
@@ -244,7 +267,7 @@ while p < policy_iterations:
     # TODO not quite sure how to formulate this in terms of DP
     # so will first just try and implement equations in wiki on MDPs
     last_pi = pi
-    pi = update_policy(values, states, neighbors)
+    pi = update_policy(values, states, neighbors, end_states)
     # check for policy convergence
     if pi == last_pi:
         print('Policy converged.')
@@ -259,8 +282,16 @@ while p < policy_iterations:
         # TODO no mutability issue right?
         last_values = values
         values = update_values(values, states, pi, discount)
+        print('v:', v)
+        print(values)
+        if value_iterations < 5:
+            plot_states(states, values, start_state, end_states, pi)
         v += 1
 
+
+    print('p:', p)
+    print(pi)
+    print('')
     p += 1
 
 plot_states(states, values, start_state, end_states, pi)

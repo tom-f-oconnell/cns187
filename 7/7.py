@@ -7,17 +7,19 @@ from matplotlib.patches import Rectangle
 import random
 import seaborn as sns
 
+should_plot = True
+verbose = False
+
 sns.set_style('dark')
 
 """
 Policy iteration and Q-learning practice
 """
 
-# TODO more general name
 def plot_states(states, values, start=None, ends=set(), policy=dict(), discount=0.99):
     # display terms with values plugged in, but unevaluated
     # on the grid, for debugging
-    plot_equations = True
+    plot_equations = False
 
     plt.figure()
     # TODO cover range of state coordinates
@@ -57,7 +59,6 @@ def plot_states(states, values, start=None, ends=set(), policy=dict(), discount=
     # policies in our example map from states to neighboring states
     # more generally, they map to actions, which may not deterministically
     # bring you to the next state
-    # TODO put values in bottom right for arrows in middle
     arrow_scale = 0.3
     for s1, s2 in policy.items():
         dy = (s2[1] - s1[1]) * arrow_scale
@@ -66,7 +67,6 @@ def plot_states(states, values, start=None, ends=set(), policy=dict(), discount=
 
     if plot_equations:
         for s in states:
-            # TODO actually pass discount
             plt.text(s[1] + width * 0.1, s[0] + height * 0.6, \
                 '%.1f * (%.1f + \n%.2f * %.1f)' % \
                 (1.0, R(s, policy[s]), discount, V(s, policy, values, discount)))
@@ -123,9 +123,6 @@ def initial_policy(neighbors, ends=set()):
 
     for s, ns in neighbors.items():
         if s in ends:
-            # TODO maybe handle some other way?
-            # if this won't by itself allow convergence
-            # end states should not allow outward transitions (?)
             policy[s] = s
         else:
             # pick a random next state
@@ -194,14 +191,15 @@ def update_policy(V_curr, states, neighbors, ends=set()):
     for s in states:
         if not s in ends:
             ns = list(neighbors[s])
-            best = V_curr[ns[0]]
+            best = R(s,ns[0]) + discount * V_curr[ns[0]]
             policy[s] = ns[0]
 
             # but we do have to loop over possible actions, which are one-to-one with s_prime
             # (argmax loop in wiki formula)
             for s_prime in ns:
-                if V_curr[s_prime] > best:
-                    best = V_curr[s_prime]
+                val = R(s,s_prime) + discount * V_curr[s_prime]
+                if  val > best:
+                    best = val
                     policy[s] = s_prime
 
     return policy
@@ -212,8 +210,6 @@ def update_values(values, states, policy, discount):
     v_next = dict()
 
     for s in states:
-        # TODO is this the right step 2?
-
         # only need policy and not neighbors, since the policy
         # produces a deterministic result (we don't need to sum
         # over all of the neighbors and weight be the probability
@@ -222,7 +218,8 @@ def update_values(values, states, policy, discount):
 
     return v_next
 
-# the figure homework 7
+# the figure in homework 7
+# the hole is an obstacle / unreachable state
 states = {(0,0),(0,1),(0,2),(0,3),\
           (1,0),      (1,2),(1,3),\
           (2,0),(2,1),(2,2),(2,3)}
@@ -231,13 +228,13 @@ states = {(0,0),(0,1),(0,2),(0,3),\
 # WARNING: if you try to read any missing states,
 # the dictionary may enter them mapped to the default value
 # (so that it gets iterated over and 'in' checks pass)
-# TODO are these initial values fine?
 values = defaultdict(int)
-values[(1,2)] = -5
-values[(2,3)] =  5
+
+# handling this with the transition rewards now, rather than initial values
+#values[(1,2)] = -5
+#values[(2,3)] =  5
 
 start_state = (0,0)
-# TODO values in this, or more generally somewhere?
 end_states = {(1,2),(2,3)}
 
 neighbors = dict()
@@ -255,10 +252,11 @@ each cell on the grid, display the value of the optimal value function V ∗ and
 optimal policy π ∗ using arrows
 '''
 
-plot_states(states, values, start_state, end_states, pi)
+if should_plot:
+    plot_states(states, values, start_state, end_states, pi, discount)
 
-policy_iterations = 1
-value_iterations = 4
+policy_iterations = 5
+value_iterations = 20
 
 p = 0
 
@@ -268,6 +266,7 @@ while p < policy_iterations:
     # so will first just try and implement equations in wiki on MDPs
     last_pi = pi
     pi = update_policy(values, states, neighbors, end_states)
+
     # check for policy convergence
     if pi == last_pi:
         print('Policy converged.')
@@ -279,20 +278,25 @@ while p < policy_iterations:
 
     # either for a certain number of iterations or until convergence
     while v < value_iterations and not values_equal(last_values, values):
-        # TODO no mutability issue right?
         last_values = values
         values = update_values(values, states, pi, discount)
-        print('v:', v)
-        print(values)
-        if value_iterations < 5:
-            plot_states(states, values, start_state, end_states, pi)
+
+        if verbose:
+            print('v:', v)
+            print(values)
+
+        # don't want to make too many plots
+        if should_plot and value_iterations < 5:
+            plot_states(states, values, start_state, end_states, pi, discount)
+
         v += 1
 
+    if verbose:
+        print('p:', p)
+        print(pi)
+        print('')
 
-    print('p:', p)
-    print(pi)
-    print('')
     p += 1
 
-plot_states(states, values, start_state, end_states, pi)
-# TODO plot values too
+if should_plot:
+    plot_states(states, values, start_state, end_states, pi, discount)
